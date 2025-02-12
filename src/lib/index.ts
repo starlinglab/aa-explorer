@@ -41,3 +41,5 @@ export async function fetchAllCIDs(): Promise<string[]> {
 	const bytes = new Uint8Array(buffer);
 	return decodeCBORResponse(bytes);
 }
+
+export const shortenCID = (s: string) => `${s.slice(0, 4)}…${s.slice(-4)}`;
