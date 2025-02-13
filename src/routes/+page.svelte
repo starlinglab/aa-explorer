@@ -46,13 +46,14 @@
 		{:else}
 			<div class="flex flex-wrap gap-2">
 				{#each data.cids as cid, index (index)}
-					<button
+					<div
 						on:click={() => loadAttestations(cid)}
 						class="relative z-0 w-30 h-30 bg-gray-200 border border-dashed border-gray-300
       transition-transform duration-200 transform hover:scale-120 hover:bg-gray-300
       hover:border-solid hover:border-gray-800 hover:z-10 hover:cursor-pointer"
 						title={cid.toString()}
 					>
+						<img src={`https://files.dev.starlinglab.org/${cid}`} alt="" />
 						{#if cid}
 							<div
 								class="absolute inset-0 flex items-center justify-center
@@ -61,7 +62,7 @@
 								{shortenCID(cid)}
 							</div>
 						{/if}
-					</button>
+					</div>
 				{/each}
 			</div>
 		{/if}
