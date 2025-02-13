@@ -1,10 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fetchAllCIDs, fetchAttestations, shortenCID, uint8ArrayToHex } from '$lib/index';
+	import type { Endpoint } from '$lib/index';
+	import { fetchAllCIDs, fetchAllAttestations, shortenCID, uint8ArrayToHex } from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
 	let selectedCID: string | null = null;
-	let selectedAttestations: any[] = [];
+	let selectedAttestations: {
+		endpoint: Endpoint;
+		attestations: Record<string, any>;
+	}[] = [];
 	let selectedError: string | null = null;
 	let isLoading: boolean = false;
 
@@ -24,7 +28,7 @@
 		selectedError = null;
 		isLoading = true;
 		try {
-			selectedAttestations = await fetchAttestations(cid);
+			selectedAttestations = await fetchAllAttestations(cid);
 		} catch (err: any) {
 			selectedError = err.message;
 		} finally {
@@ -41,7 +45,7 @@
 			<p>Loading...</p>
 		{:else}
 			<div class="flex flex-wrap gap-2">
-				{#each data.cids as cid (cid.toString())}
+				{#each data.cids as cid, index (index)}
 					<button
 						on:click={() => loadAttestations(cid)}
 						class="relative z-0 w-30 h-30 bg-gray-200 border border-dashed border-gray-300
@@ -71,13 +75,17 @@
 				<p class="text-sm text-gray-500">Loading attestations...</p>
 			{:else if selectedError}
 				<p class="text-red-500 text-sm">Error: {selectedError}</p>
-			{:else if Object.keys(selectedAttestations).length === 0}
+			{:else if selectedAttestations.length === 0}
 				<p class="text-sm text-gray-500">No attestations found.</p>
 			{:else}
 				<div class="overflow-x-auto">
 					<table class="min-w-full divide-y divide-gray-200">
 						<thead>
 							<tr>
+								<th
+									class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>Source</th
+								>
 								<th
 									class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 									>Attribute</th
@@ -97,23 +105,24 @@
 							</tr>
 						</thead>
 						<tbody class="bg-white divide-y divide-gray-200">
-							{#each Object.entries(selectedAttestations) as [attribute, att]}
-								<tr>
-									<td class="px-4 py-2 text-xs text-gray-700">
-										{attribute}
-									</td>
-									<td class="px-4 py-2 text-xs text-gray-700">
-										{att.attestation && att.attestation.value ? att.attestation.value : 'N/A'}
-									</td>
-									<td class="px-4 py-2 text-xs text-gray-700">
-										{att.signature ? shortenCID(uint8ArrayToHex(att.signature.pubKey)) : 'N/A'}
-									</td>
-									<td class="px-4 py-2 text-xs text-gray-700">
-										{att.attestation && att.attestation.timestamp
-											? att.attestation.timestamp
-											: 'N/A'}
-									</td>
-								</tr>
+							{#each selectedAttestations as { endpoint, attestations }}
+								{#each Object.entries(attestations) as [attribute, att]}
+									<tr>
+										<td class="px-4 py-2 text-xs text-gray-700">{endpoint}</td>
+										<td class="px-4 py-2 text-xs text-gray-700">{attribute}</td>
+										<td class="px-4 py-2 text-xs text-gray-700"
+											>{att.attestation?.value ?? 'N/A'}</td
+										>
+										<td class="px-4 py-2 text-xs text-gray-700"
+											>{att.signature
+												? shortenCID(uint8ArrayToHex(att.signature.pubKey))
+												: 'N/A'}</td
+										>
+										<td class="px-4 py-2 text-xs text-gray-700"
+											>{att.attestation?.timestamp ?? 'N/A'}</td
+										>
+									</tr>
+								{/each}
 							{/each}
 						</tbody>
 					</table>
