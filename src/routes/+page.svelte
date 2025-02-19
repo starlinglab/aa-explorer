@@ -35,6 +35,28 @@
 			isLoading = false;
 		}
 	}
+
+	// Handle click on whitespace or Esc key to reset selectedCID
+	function handleClickOutside(event: MouseEvent) {
+		if (!(event.target as HTMLElement).closest('.cid-item')) {
+			selectedCID = null;
+		}
+	}
+
+	function handleKeyDown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			selectedCID = null;
+		}
+	}
+
+	onMount(() => {
+		document.addEventListener('click', handleClickOutside);
+		document.addEventListener('keydown', handleKeyDown);
+		return () => {
+			document.removeEventListener('click', handleClickOutside);
+			document.removeEventListener('keydown', handleKeyDown);
+		};
+	});
 </script>
 
 <div class="flex flex-col h-screen">
@@ -48,9 +70,10 @@
 				{#each data.cids as cid, index (index)}
 					<div
 						on:click={() => loadAttestations(cid)}
-						class="relative z-0 w-30 h-30 bg-gray-200 border border-dashed border-gray-300
-      transition-transform duration-200 transform hover:scale-120 hover:bg-gray-300
-      hover:border-solid hover:border-gray-800 hover:z-10 hover:cursor-pointer"
+						class="cid-item relative z-0 w-30 h-30 bg-gray-200 border border-dashed border-gray-300
+      transition-transform duration-200 transform {selectedCID === cid
+							? 'scale-140 bg-gray-300 border-solid border-gray-800 z-10'
+							: 'hover:scale-120 hover:bg-gray-300 hover:border-solid hover:border-gray-800 hover:z-10 hover:cursor-pointer'}"
 						title={cid.toString()}
 					>
 						<img src={`https://files.dev.starlinglab.org/${cid}`} alt="" />
