@@ -61,31 +61,19 @@ async function fetchAttestationsFromEndpoint(endpoint: Endpoint, cid: string): P
 }
 
 /**
- * Fetch attestations for a given CID from all endpoints.
- *
- * @param cid - The CID for which to fetch attestations.
- * @returns A Promise that resolves to an array of attestations.
- */
-/**
  * Fetches attestations for a given CID from multiple endpoints.
  *
  * @param {string} cid - The content identifier for which to fetch attestations.
- * @returns {Promise<any[]>} A promise that resolves to an array of objects, each containing
- * the endpoint and its corresponding attestations.
+ * @returns {Promise<{}[]>} A promise that resolves to an array of attestation key-value pairs.
  */
-export async function fetchAllAttestations(cid: string): Promise<
-	{
-		endpoint: Endpoint;
-		attestations: {};
-	}[]
-> {
+export async function fetchAllAttestations(cid: string): Promise<{}[]> {
 	const results = await Promise.all(
 		ENDPOINTS.map(async (endpoint) => {
 			const attestations = await fetchAttestationsFromEndpoint(endpoint, cid);
-			return { endpoint, attestations };
+			return Object.entries(attestations).map(([key, value]) => ({ key, value }));
 		})
 	);
-	return results;
+	return results.flat();
 }
 
 export const shortenCID = (s: string) => `${s.slice(0, 4)}…${s.slice(-4)}`;

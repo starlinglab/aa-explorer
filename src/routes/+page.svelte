@@ -1,34 +1,42 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Endpoint } from '$lib/index';
-	import { fetchAllCIDs, fetchAllAttestations, shortenCID, uint8ArrayToHex } from '$lib/index';
+	import type { ListOfAttestations } from '../lib/types';
+	import TableOfMetadata from './TableOfMetadata.svelte';
+	import { fetchAllCIDs, fetchAllAttestations, shortenCID } from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
 	let selectedCID: string | null = null;
-	let selectedAttestations: {
-		endpoint: Endpoint;
-		attestations: Record<string, any>;
-	}[] = [];
+	let selectedAttestations: ListOfAttestations = [];
 	let selectedError: string | null = null;
 	let isLoading: boolean = false;
 
-	onMount(async () => {
-		try {
-			const cids = await fetchAllCIDs();
-			data.cids = cids;
-		} catch (err: any) {
-			data.error = err.message;
-		}
+	onMount(() => {
+		const fetchData = async () => {
+			try {
+				const cids = await fetchAllCIDs();
+				data.cids = cids;
+			} catch (err: any) {
+				data.error = err.message;
+			}
+		};
+
+		fetchData();
+
+		document.addEventListener('click', handleClickOutside);
+		document.addEventListener('keydown', handleKeyDown);
+		return () => {
+			document.removeEventListener('click', handleClickOutside);
+			document.removeEventListener('keydown', handleKeyDown);
+		};
 	});
 
 	// When an item is clicked, fetch its attestations.
 	async function loadAttestations(cid: string) {
 		selectedCID = cid;
-		selectedAttestations = [];
 		selectedError = null;
 		isLoading = true;
 		try {
-			selectedAttestations = await fetchAllAttestations(cid);
+			selectedAttestations = (await fetchAllAttestations(cid)) as ListOfAttestations;
 		} catch (err: any) {
 			selectedError = err.message;
 		} finally {
@@ -49,14 +57,20 @@
 		}
 	}
 
-	onMount(() => {
-		document.addEventListener('click', handleClickOutside);
-		document.addEventListener('keydown', handleKeyDown);
-		return () => {
-			document.removeEventListener('click', handleClickOutside);
-			document.removeEventListener('keydown', handleKeyDown);
-		};
-	});
+	const KeysOfAuthenticatedRelationships = [
+		'asset_subcollection',
+		'asset_collection',
+		'children',
+		'parent'
+	];
+
+	$: authenticatedMetadata = selectedAttestations.filter(
+		(d) => !KeysOfAuthenticatedRelationships.includes(d['key'])
+	);
+
+	$: authenticatedRelationships = selectedAttestations.filter((d) =>
+		KeysOfAuthenticatedRelationships.includes(d['key'])
+	);
 </script>
 
 <div class="flex flex-col h-screen">
@@ -78,7 +92,7 @@
 						title={cid.toString()}
 						aria-pressed={selectedCID === cid}
 					>
-						<img src={`https://files.dev.starlinglab.org/${cid}`} alt="" />
+						<!-- <img src={`https://files.dev.starlinglab.org/${cid}`} alt="" /> -->
 						{#if cid}
 							<div
 								class="absolute inset-0 flex items-center justify-center
@@ -101,57 +115,13 @@
 				<p class="text-sm text-gray-500">Loading attestations...</p>
 			{:else if selectedError}
 				<p class="text-red-500 text-sm">Error: {selectedError}</p>
-			{:else if selectedAttestations.length === 0}
-				<p class="text-sm text-gray-500">No attestations found.</p>
 			{:else}
 				<div class="overflow-x-auto">
-					<table class="min-w-full divide-y divide-gray-200">
-						<thead>
-							<tr>
-								<th
-									class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-									>Source</th
-								>
-								<th
-									class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-									>Attribute</th
-								>
-								<th
-									class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-									>Attestation</th
-								>
-								<th
-									class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-									>Signature</th
-								>
-								<th
-									class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-									>Timestamp</th
-								>
-							</tr>
-						</thead>
-						<tbody class="bg-white divide-y divide-gray-200">
-							{#each selectedAttestations as { endpoint, attestations }}
-								{#each Object.entries(attestations) as [attribute, att]}
-									<tr>
-										<td class="px-4 py-2 text-xs text-gray-700">{endpoint}</td>
-										<td class="px-4 py-2 text-xs text-gray-700">{attribute}</td>
-										<td class="px-4 py-2 text-xs text-gray-700"
-											>{att.attestation?.value ?? 'N/A'}</td
-										>
-										<td class="px-4 py-2 text-xs text-gray-700"
-											>{att.signature
-												? shortenCID(uint8ArrayToHex(att.signature.pubKey))
-												: 'N/A'}</td
-										>
-										<td class="px-4 py-2 text-xs text-gray-700"
-											>{att.attestation?.timestamp ?? 'N/A'}</td
-										>
-									</tr>
-								{/each}
-							{/each}
-						</tbody>
-					</table>
+					<h4>Authenticated Metadata</h4>
+					<TableOfMetadata data={authenticatedMetadata}></TableOfMetadata>
+
+					<h4>Authenticated Relationships</h4>
+					<TableOfMetadata data={authenticatedRelationships}></TableOfMetadata>
 				</div>
 			{/if}
 		{:else}
