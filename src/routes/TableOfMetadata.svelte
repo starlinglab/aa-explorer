@@ -12,10 +12,10 @@
 <table class="min-w-full divide-y divide-gray-200">
 	<thead>
 		<tr>
-			{#each ['Attribute', 'Attestation', 'Signature', 'Timestamp'] as header, i}
+			{#each ['', '', 'Attestation', 'Signature'] as header, i}
 				<th
 					class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-					style="width: {i === 1 ? '70%' : '10%'}">{header}</th
+					style="width: {i === 2 ? '70%' : '10%'}">{header}</th
 				>
 			{/each}
 		</tr>
@@ -23,13 +23,14 @@
 	<tbody class="bg-white divide-y divide-gray-200">
 		{#each data as attribute: AttestationValue (attribute.key + Math.random())}
 			<tr>
-				<td class="px-4 py-2 text-xs text-gray-700" style="width: 10%">{getKey(attribute)}</td>
+				<td class="px-4 py-2 text-l text-gray-700" style="width: 10%">✔️ | 🔑 | 🗓️</td>
+				<td class="px-4 py-2 text-xs text-gray-700 text-right" style="width: 10%"
+					>{getKey(attribute)}:</td
+				>
 				<td class="px-4 py-2 text-xs text-gray-700" style="width: 70%">{getAttribute(attribute)}</td
 				>
 				<td class="px-4 py-2 text-xs text-gray-700" style="width: 10%"
 					>{shortenCID(uint8ArrayToHex(getPubKey(attribute)))}</td
-				>
-				<td class="px-4 py-2 text-xs text-gray-700" style="width: 10%">{getTimestamp(attribute)}</td
 				>
 			</tr>
 		{/each}
