@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { uint8ArrayToHex, shortenCID } from '$lib/index';
-	import type { ListOfAttestations, IndividualAttestation } from '../lib/types';
+	import type { ListOfAttestations, IndividualAttestation } from './types';
 	export let data: ListOfAttestations;
 
 	const getKey = (att: IndividualAttestation) => att.key;

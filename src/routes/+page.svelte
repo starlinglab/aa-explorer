@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { ListOfAttestations } from '../lib/types';
-	import TableOfMetadata from './TableOfMetadata.svelte';
+	import TableOfMetadata from '../lib/TableOfMetadata.svelte';
 	import { fetchAllCIDs, fetchAllAttestations, shortenCID } from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
