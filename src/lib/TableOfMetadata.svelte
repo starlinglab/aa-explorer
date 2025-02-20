@@ -1,4 +1,5 @@
 <script lang="ts">
+	import VerifyButton from './VerifyButton.svelte';
 	import { uint8ArrayToHex, shortenCID } from '$lib/index';
 	import type { ListOfAttestations, IndividualAttestation } from './types';
 	export let data: ListOfAttestations;
@@ -23,7 +24,13 @@
 	<tbody class="bg-white divide-y divide-gray-200">
 		{#each data as attribute: AttestationValue (attribute.key + Math.random())}
 			<tr>
-				<td class="px-4 py-2 text-l text-gray-700" style="width: 10%">✔️ | 🔑 | 🗓️</td>
+				<td class="px-4 py-2 text-l text-gray-700" style="width: 10%">
+					<div class="flex space-x-2">
+						<VerifyButton copy={'✔️'} kind={'hash'} data={attribute} />
+						<VerifyButton copy={'🔑'} kind={'signature'} data={attribute} />
+						<VerifyButton copy={'🗓️'} kind={'timestamp'} data={attribute} />
+					</div>
+				</td>
 				<td class="px-4 py-2 text-xs text-gray-700 text-right" style="width: 10%"
 					>{getKey(attribute)}:</td
 				>
