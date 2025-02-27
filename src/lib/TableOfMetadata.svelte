@@ -22,7 +22,7 @@
 			{/each}
 		</tr>
 	</thead>
-	<tbody class="bg-white divide-y divide-gray-200">
+	<tbody class="bg-white divide-y divide-gray-100">
 		{#each data as attribute: AttestationValue, index (attribute.key + Math.random())}
 			<tr class={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
 				<td class="px-4 py-2 text-l text-gray-700" style="width: 10%">
