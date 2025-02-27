@@ -22,6 +22,13 @@
 
 		fetchData();
 
+		// Check for selectedCID in URL and load attestations if present
+		const urlParams = new URLSearchParams(window.location.search);
+		const initialCID = urlParams.get('selectedCID');
+		if (initialCID) {
+			loadAttestations(initialCID);
+		}
+
 		document.addEventListener('click', handleClickOutside);
 		document.addEventListener('keydown', handleKeyDown);
 		return () => {
@@ -33,6 +40,9 @@
 	// When an item is clicked, fetch its attestations.
 	async function loadAttestations(cid: string) {
 		selectedCID = cid;
+		const url = new URL(window.location.href);
+		url.searchParams.set('selectedCID', cid);
+		window.history.pushState({}, '', url);
 		selectedError = null;
 		isLoading = true;
 		try {
@@ -108,7 +118,7 @@
 	</div>
 
 	<div class="flex-1 p-4 border-t border-gray-300 overflow-auto">
-		<h2 class="text-lg font-semibold mb-2">Attestations</h2>
+		<h2 class="text-lg font-bold mb-1">Attestations</h2>
 		{#if selectedCID}
 			<p class="text-sm text-gray-700 mb-2">For CID: {shortenCID(selectedCID)}</p>
 			{#if isLoading}
@@ -116,11 +126,10 @@
 			{:else if selectedError}
 				<p class="text-red-500 text-sm">Error: {selectedError}</p>
 			{:else}
-				<div class="overflow-x-auto">
-					<h4>Authenticated Metadata</h4>
+				<div class="overflow-x-auto ml-4">
+					<h4 class="text-base font-semibold">Authenticated Metadata</h4>
 					<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
-
-					<h4>Authenticated Relationships</h4>
+					<h4 class="text-base font-semibold mt-4">Authenticated Relationships</h4>
 					<TableOfMetadata data={authenticatedRelationships} {selectedCID}></TableOfMetadata>
 				</div>
 			{/if}
