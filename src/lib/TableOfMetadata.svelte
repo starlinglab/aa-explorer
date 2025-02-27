@@ -3,6 +3,7 @@
 	import { uint8ArrayToHex, shortenCID } from '$lib/index';
 	import type { ListOfAttestations, IndividualAttestation } from './types';
 	export let data: ListOfAttestations;
+	export let selectedCID: string;
 
 	const getKey = (att: IndividualAttestation) => att.key;
 	const getAttribute = (att: IndividualAttestation) => att.value.attestation.value;
@@ -26,7 +27,7 @@
 			<tr>
 				<td class="px-4 py-2 text-l text-gray-700" style="width: 10%">
 					<div class="flex space-x-2">
-						<VerifyButton copy={'✔️'} kind={'hash'} data={attribute} />
+						<VerifyButton copy={'✔️'} kind={'hash'} data={attribute} {selectedCID} />
 						<VerifyButton copy={'🔑'} kind={'signature'} data={attribute} />
 						<VerifyButton copy={'🗓️'} kind={'timestamp'} data={attribute} />
 					</div>
