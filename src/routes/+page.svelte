@@ -22,6 +22,13 @@
 
 		fetchData();
 
+		// Check for selectedCID in URL and load attestations if present
+		const urlParams = new URLSearchParams(window.location.search);
+		const initialCID = urlParams.get('selectedCID');
+		if (initialCID) {
+			loadAttestations(initialCID);
+		}
+
 		document.addEventListener('click', handleClickOutside);
 		document.addEventListener('keydown', handleKeyDown);
 		return () => {
@@ -33,6 +40,9 @@
 	// When an item is clicked, fetch its attestations.
 	async function loadAttestations(cid: string) {
 		selectedCID = cid;
+		const url = new URL(window.location.href);
+		url.searchParams.set('selectedCID', cid);
+		window.history.pushState({}, '', url);
 		selectedError = null;
 		isLoading = true;
 		try {
