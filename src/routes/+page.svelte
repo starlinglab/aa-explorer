@@ -118,7 +118,7 @@
 	</div>
 
 	<div class="flex-1 p-4 border-t border-gray-300 overflow-auto">
-		<h2 class="text-lg font-semibold mb-2">Attestations</h2>
+		<h2 class="text-lg font-bold mb-1">Attestations</h2>
 		{#if selectedCID}
 			<p class="text-sm text-gray-700 mb-2">For CID: {shortenCID(selectedCID)}</p>
 			{#if isLoading}
@@ -126,11 +126,10 @@
 			{:else if selectedError}
 				<p class="text-red-500 text-sm">Error: {selectedError}</p>
 			{:else}
-				<div class="overflow-x-auto">
-					<h4>Authenticated Metadata</h4>
+				<div class="overflow-x-auto ml-4">
+					<h4 class="text-base font-semibold">Authenticated Metadata</h4>
 					<TableOfMetadata data={authenticatedMetadata}></TableOfMetadata>
-
-					<h4>Authenticated Relationships</h4>
+					<h4 class="text-base font-semibold mt-4">Authenticated Relationships</h4>
 					<TableOfMetadata data={authenticatedRelationships}></TableOfMetadata>
 				</div>
 			{/if}

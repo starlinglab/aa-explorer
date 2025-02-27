@@ -20,9 +20,9 @@
 			{/each}
 		</tr>
 	</thead>
-	<tbody class="bg-white divide-y divide-gray-200">
-		{#each data as attribute: AttestationValue (attribute.key + Math.random())}
-			<tr>
+	<tbody class="bg-white divide-y divide-gray-100">
+		{#each data as attribute, index (attribute.key + Math.random())}
+			<tr class={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
 				<td class="px-4 py-2 text-l text-gray-700" style="width: 10%">✔️ | 🔑 | 🗓️</td>
 				<td class="px-4 py-2 text-xs text-gray-700 text-right" style="width: 10%"
 					>{getKey(attribute)}:</td
