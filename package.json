@@ -28,6 +28,7 @@
 	},
 	"dependencies": {
 		"@ipld/dag-cbor": "^9.2.2",
-		"cid": "multiformats/cid"
+		"@noble/ed25519": "^2.2.3",
+		"multiformats": "^13.3.2"
 	}
 }

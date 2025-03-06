@@ -128,9 +128,9 @@
 			{:else}
 				<div class="overflow-x-auto ml-4">
 					<h4 class="text-base font-semibold">Authenticated Metadata</h4>
-					<TableOfMetadata data={authenticatedMetadata}></TableOfMetadata>
+					<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
 					<h4 class="text-base font-semibold mt-4">Authenticated Relationships</h4>
-					<TableOfMetadata data={authenticatedRelationships}></TableOfMetadata>
+					<TableOfMetadata data={authenticatedRelationships} {selectedCID}></TableOfMetadata>
 				</div>
 			{/if}
 		{:else}
