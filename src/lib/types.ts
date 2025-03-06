@@ -1,4 +1,4 @@
-import { CID } from 'multiformats/cid'
+import { CID } from 'multiformats/cid';
 
 interface Attestation {
 	CID: CID;
@@ -19,6 +19,7 @@ interface OTS {
 	upgraded: boolean;
 	msg: CID;
 }
+
 export interface AttestationValue {
 	attestation: Attestation;
 	signature: Signature;
@@ -26,6 +27,11 @@ export interface AttestationValue {
 		ots: OTS;
 	};
 	version: string;
+}
+export interface ProducedBy {
+	url: string;
+	name: string;
+	'@type': string;
 }
 
 export type IndividualAttestation = { key: string; value: AttestationValue };

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import VerifyButton from './VerifyButton.svelte';
 	import { uint8ArrayToHex, shortenCID } from '$lib/index';
-	import type { ListOfAttestations, IndividualAttestation } from './types';
+	import type { ListOfAttestations, IndividualAttestation, ProducedBy } from './types';
 	export let data: ListOfAttestations;
 	export let selectedCID: string;
 
@@ -35,8 +35,20 @@
 				<td class="px-4 py-2 text-xs text-gray-700 text-right" style="width: 10%"
 					>{getKey(attribute)}:</td
 				>
-				<td class="px-4 py-2 text-xs text-gray-700" style="width: 70%">{getAttribute(attribute)}</td
-				>
+				<td class="px-4 py-2 text-xs text-gray-700" style="width: 70%">
+					{#if getKey(attribute) === 'produced_by'}
+						<div>
+							<a
+								href={(getAttribute(attribute) as ProducedBy).url}
+								target="_blank"
+								rel="noopener noreferrer">👤 {(getAttribute(attribute) as ProducedBy).name}</a
+							>
+							<span>({(getAttribute(attribute) as ProducedBy)['@type']})</span>
+						</div>
+					{:else}
+						{getAttribute(attribute)}
+					{/if}
+				</td>
 				<td class="px-4 py-2 text-xs text-gray-700" style="width: 10%"
 					>{shortenCID(uint8ArrayToHex(getPubKey(attribute)))}</td
 				>
