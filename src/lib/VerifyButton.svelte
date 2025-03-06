@@ -83,14 +83,16 @@
 	}
 </script>
 
-<button style="cursor: pointer;" on:click={handleClick}>
-	{#await dataVerifies()}
-		Loading...
-	{:then ok}
-		{#if ok}
+{#await dataVerifies()}
+	Loading...
+{:then ok}
+	{#if ok}
+		<button style="cursor: pointer;" on:click={handleClick} title="{kind}: Verified OK">
 			{copy}
-		{:else}
+		</button>
+	{:else}
+		<button style="cursor: pointer;" on:click={handleClick} title="{kind}: Verification failed">
 			❌
-		{/if}
-	{/await}
-</button>
+		</button>
+	{/if}
+{/await}
