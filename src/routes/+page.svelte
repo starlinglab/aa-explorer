@@ -118,7 +118,20 @@
 	</div>
 
 	<div class="flex-1/3 p-3 border-l border-gray-300">
-	<div class="flex-1 p-4 border-t border-gray-300 overflow-auto">
+		{#if selectedCID}
+			<div class="flex">
+				<div class="w-1/2 p-1">
+					<img src={`https://files.dev.starlinglab.org/${selectedCID}`} alt="" class="max-w-full" />
+				</div>
+				<div
+					class="w-1/2 p-4 border-1 border-solid border-gray-200 flex items-center justify-center"
+				>
+					<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+						<rect width="100" height="100" fill="gray" />
+					</svg>
+				</div>
+			</div>
+		{/if}
 		<h2 class="text-lg font-bold mb-1">Attestations</h2>
 		{#if selectedCID}
 			<p class="text-sm text-gray-700 mb-2">For CID: {shortenCID(selectedCID)}</p>
