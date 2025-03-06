@@ -11,7 +11,7 @@
 	const getPubKey = (att: IndividualAttestation) => att.value.signature.pubKey;
 </script>
 
-<table class="min-w-full divide-y divide-gray-200">
+<table class="divide-y divide-gray-200">
 	<thead>
 		<tr>
 			{#each ['', '', 'Attestation', 'Signature'] as header, i}

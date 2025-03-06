@@ -71,7 +71,7 @@
 		'asset_subcollection',
 		'asset_collection',
 		'children',
-		'parent'
+		'parents'
 	];
 
 	$: authenticatedMetadata = selectedAttestations.filter(
@@ -83,8 +83,8 @@
 	);
 </script>
 
-<div class="flex flex-col h-screen">
-	<div class="flex-1 p-4 overflow-auto">
+<div class="flex h-screen">
+	<div class="flex-2/3 p-4 overflow-auto">
 		{#if data.error}
 			<p class="text-red-500">Error: {data.error}</p>
 		{:else if !data.cids || data.cids.length === 0}
@@ -117,6 +117,7 @@
 		{/if}
 	</div>
 
+	<div class="flex-1/3 p-3 border-l border-gray-300">
 	<div class="flex-1 p-4 border-t border-gray-300 overflow-auto">
 		<h2 class="text-lg font-bold mb-1">Attestations</h2>
 		{#if selectedCID}
