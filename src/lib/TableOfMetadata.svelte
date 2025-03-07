@@ -22,6 +22,13 @@
 		);
 	};
 
+	function handleLinkClick(event: MouseEvent, cid: string) {
+		event.preventDefault();
+		const url = new URL(window.location.href);
+		url.searchParams.set('selectedCID', cid);
+		window.history.pushState({}, '', url);
+		window.dispatchEvent(new Event('popstate'));
+	}
 </script>
 
 <table class="divide-y divide-gray-200">
@@ -63,6 +70,7 @@
 							<a
 								href={`/?selectedCID=${relationship.toString()}`}
 								class="pr-2"
+								on:click={(event) => handleLinkClick(event, relationship.toString())}
 							>
 								🔗 {shortenCID(relationship.toString())}
 							</a>

@@ -10,30 +10,35 @@
 	let selectedError: string | null = null;
 	let isLoading: boolean = false;
 
-	onMount(() => {
-		const fetchData = async () => {
-			try {
-				const cids = await fetchAllCIDs();
-				data.cids = cids;
-			} catch (err: any) {
-				data.error = err.message;
-			}
-		};
+	async function fetchData() {
+		try {
+			const cids = await fetchAllCIDs();
+			data.cids = cids;
+		} catch (err: any) {
+			data.error = err.message;
+		}
+	}
 
-		fetchData();
-
-		// Check for selectedCID in URL and load attestations if present
+	function checkSelectedCID() {
 		const urlParams = new URLSearchParams(window.location.search);
 		const initialCID = urlParams.get('selectedCID');
-		if (initialCID) {
+		if (initialCID && initialCID !== selectedCID) {
 			loadAttestations(initialCID);
 		}
+	}
 
-		document.addEventListener('click', handleClickOutside);
+	onMount(() => {
+		fetchData();
+		checkSelectedCID();
+
+		window.addEventListener('popstate', checkSelectedCID);
 		document.addEventListener('keydown', handleKeyDown);
+		// document.addEventListener('click', handleClickOutside);
+
 		return () => {
-			document.removeEventListener('click', handleClickOutside);
+			window.removeEventListener('popstate', checkSelectedCID);
 			document.removeEventListener('keydown', handleKeyDown);
+			// document.removeEventListener('click', handleClickOutside);
 		};
 	});
 
@@ -43,18 +48,22 @@
 		const url = new URL(window.location.href);
 		url.searchParams.set('selectedCID', cid);
 		window.history.pushState({}, '', url);
+		window.dispatchEvent(new Event('popstate')); // Manually trigger popstate event
 		selectedError = null;
 		isLoading = true;
 		try {
-			selectedAttestations = (await fetchAllAttestations(cid)) as ListOfAttestations;
+			const attestations = await fetchAllAttestations(cid);
+			selectedAttestations = attestations as ListOfAttestations;
 		} catch (err: any) {
 			selectedError = err.message;
+			console.error(`Error fetching attestations: ${err.message}`);
 		} finally {
 			isLoading = false;
 		}
 	}
 
 	// Handle click on whitespace or Esc key to reset selectedCID
+	// NOTE: not used to permit clicking around and navigating to new CIDs
 	function handleClickOutside(event: MouseEvent) {
 		if (!(event.target as HTMLElement).closest('.cid-item')) {
 			selectedCID = null;
@@ -96,7 +105,7 @@
 						on:click={() => loadAttestations(cid)}
 						on:keydown={(event) => event.key === 'Enter' && loadAttestations(cid)}
 						class="cid-item relative z-0 w-30 h-30 bg-gray-200 border border-dashed border-gray-300
-		transition-transform duration-200 transform {selectedCID === cid
+        transition-transform duration-200 transform {selectedCID === cid
 							? 'scale-140 bg-gray-300 border-solid border-gray-800 z-10'
 							: 'hover:scale-120 hover:bg-gray-300 hover:border-solid hover:border-gray-800 hover:z-10 hover:cursor-pointer'}"
 						title={cid.toString()}
@@ -106,7 +115,7 @@
 						{#if cid}
 							<div
 								class="absolute inset-0 flex items-center justify-center
-		text-xs text-gray-700 opacity-0 hover:opacity-100"
+        text-xs text-gray-700 opacity-0 hover:opacity-100"
 							>
 								{shortenCID(cid)}
 							</div>
