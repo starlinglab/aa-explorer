@@ -1,7 +1,13 @@
 <script lang="ts">
 	import VerifyButton from './VerifyButton.svelte';
 	import { uint8ArrayToHex, shortenCID } from '$lib/index';
-	import type { ListOfAttestations, IndividualAttestation, ProducedBy } from './types';
+	import { CID } from 'multiformats/cid';
+	import type {
+		ListOfAttestations,
+		IndividualAttestation,
+		ProducedBy,
+		Relationship
+	} from './types';
 	export let data: ListOfAttestations;
 	export let selectedCID: string;
 
@@ -9,6 +15,13 @@
 	const getAttribute = (att: IndividualAttestation) => att.value.attestation.value;
 	const getTimestamp = (att: IndividualAttestation) => att.value.attestation.timestamp;
 	const getPubKey = (att: IndividualAttestation) => att.value.signature.pubKey;
+
+	const formatRelationships = (att: Relationship): CID[] => {
+		return (['contextualize', 'publish', 'support', 'witness'] as (keyof Relationship)[]).flatMap(
+			(key) => att[key] || []
+		);
+	};
+
 </script>
 
 <table class="divide-y divide-gray-200">
@@ -32,9 +45,9 @@
 						<VerifyButton copy={'🗓️'} kind={'timestamp'} data={attribute} />
 					</div>
 				</td>
-				<td class="px-4 py-2 text-xs text-gray-700 text-right" style="width: 10%"
-					>{getKey(attribute)}:</td
-				>
+				<td class="px-4 py-2 text-xs text-gray-700 text-right" style="width: 10%">
+					{getKey(attribute)}:
+				</td>
 				<td class="px-4 py-2 text-xs text-gray-700" style="width: 70%">
 					{#if getKey(attribute) === 'produced_by'}
 						<div>
@@ -45,13 +58,22 @@
 							>
 							<span>({(getAttribute(attribute) as ProducedBy)['@type']})</span>
 						</div>
+					{:else if getKey(attribute) === 'parents' || getKey(attribute) === 'children'}
+						{#each formatRelationships(getAttribute(attribute) as Relationship) as relationship}
+							<a
+								href={`/?selectedCID=${relationship.toString()}`}
+								class="pr-2"
+							>
+								🔗 {shortenCID(relationship.toString())}
+							</a>
+						{/each}
 					{:else}
 						{getAttribute(attribute)}
 					{/if}
 				</td>
-				<td class="px-4 py-2 text-xs text-gray-700" style="width: 10%"
-					>{shortenCID(uint8ArrayToHex(getPubKey(attribute)))}</td
-				>
+				<td class="px-4 py-2 text-xs text-gray-700" style="width: 10%">
+					{shortenCID(uint8ArrayToHex(getPubKey(attribute)))}
+				</td>
 			</tr>
 		{/each}
 	</tbody>

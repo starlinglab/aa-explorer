@@ -33,6 +33,12 @@ export interface ProducedBy {
 	name: string;
 	'@type': string;
 }
+export interface Relationship {
+	contextualize?: CID[];
+	publish?: CID[];
+	support?: CID[];
+	witness?: CID[];
+}
 
 export type IndividualAttestation = { key: string; value: AttestationValue };
 export type ListOfAttestations = IndividualAttestation[];
