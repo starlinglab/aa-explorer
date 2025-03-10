@@ -1,23 +1,56 @@
 <script lang="ts">
-	// @ts-nocheck
+	import { onMount } from 'svelte';
+	import { shortenCID } from '$lib/index';
 	import type { ListOfAttestations } from './types';
-	import { onMount, tick } from 'svelte';
+
+	import { scaleOrdinal } from 'd3-scale';
+	import { schemeCategory10 } from 'd3-scale-chromatic';
+	import type { Simulation, SimulationLinkDatum, SimulationNodeDatum } from 'd3-force';
 	import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide } from 'd3-force';
 
 	export let authenticatedRelationships: ListOfAttestations = [];
 
-	// Extract relationships data from authenticatedRelationships
-	$: relationshipData =
-		authenticatedRelationships.filter((d) => d.key === 'children' || d.key === 'parents')[0]?.value
-			?.attestation?.value || {};
+	// Define types for our nodes and links
+	interface NodeDatum extends SimulationNodeDatum {
+		id: string;
+		name: string;
+		type: 'root' | 'relationship' | 'cid';
+		cid?: string;
+		fx?: number | null;
+		fy?: number | null;
+		x?: number;
+		y?: number;
+	}
+
+	interface LinkDatum extends SimulationLinkDatum<NodeDatum> {
+		source: string | NodeDatum;
+		target: string | NodeDatum;
+	}
+
+	// Extract relationships data from authenticatedRelationships with improved error handling
+	$: relationshipData = (() => {
+		try {
+			const attestation = authenticatedRelationships.find(
+				(d) => d.key === 'children' || d.key === 'parents'
+			);
+			// Safely access the relationship data
+			if (attestation?.value?.attestation?.value) {
+				return attestation.value.attestation.value;
+			}
+			return {};
+		} catch (err) {
+			console.error('Error extracting relationship data:', err);
+			return {};
+		}
+	})();
 
 	const width = 300;
 	const height = 300;
 
 	// Create node and link data structures
-	let nodes = [];
-	let links = [];
-	let simulation;
+	let nodes: NodeDatum[] = [];
+	let links: LinkDatum[] = [];
+	let simulation: Simulation<NodeDatum, LinkDatum>;
 
 	// Process relationship data into nodes and links
 	$: {
@@ -27,14 +60,9 @@
 			typeof relationshipData === 'object' &&
 			Object.keys(relationshipData).length > 0
 		) {
-			// Reset nodes and links
-			nodes = [
-				{
-					id: 'root',
-					name: 'Current Asset',
-					type: 'root'
-				}
-			];
+			// Reset
+			// @prettier-ignore
+			nodes = [{ id: 'root', name: 'Current Asset', type: 'root' as const }];
 			links = [];
 
 			// Process each relationship type
@@ -45,7 +73,7 @@
 					nodes.push({
 						id: relNodeId,
 						name: relType,
-						type: 'relationship'
+						type: 'relationship' as const
 					});
 
 					// Link from root to relationship type
@@ -64,10 +92,9 @@
 
 						try {
 							if (item && typeof item === 'object' && '/' in item) {
-								cidValue = String(item['/'] || '');
-
+								cidValue = item.toString();
 								if (cidValue && cidValue.length > 0) {
-									displayName = cidValue.substring(0, 10) + '...';
+									displayName = shortenCID(cidValue);
 								}
 							}
 						} catch (err) {
@@ -78,7 +105,7 @@
 							id: cidNodeId,
 							name: displayName,
 							cid: cidValue,
-							type: 'cid'
+							type: 'cid' as const
 						});
 
 						// Link from relationship type to CID
@@ -96,19 +123,28 @@
 	}
 
 	// Let D3 force layout handle node positioning
-	function initializeSimulation() {
+	function initializeSimulation(): void {
 		// Skip initialization if no nodes
 		if (nodes.length === 0) return;
 
 		// Set up a more dynamic force simulation
-		simulation = forceSimulation(nodes)
+		simulation = forceSimulation<NodeDatum, LinkDatum>(nodes)
 			.force(
 				'link',
-				forceLink(links)
-					.id((d) => d.id)
-					.distance((node) => {
+				forceLink<NodeDatum, LinkDatum>(links)
+					.id((d: NodeDatum) => d.id)
+					.distance((link: LinkDatum) => {
+						const source =
+							typeof link.source === 'object'
+								? link.source
+								: nodes.find((n) => n.id === link.source);
+						const target =
+							typeof link.target === 'object'
+								? link.target
+								: nodes.find((n) => n.id === link.target);
+
 						// Root to relationship links are longer
-						if (node.source.id === 'root' || node.target.id === 'root') {
+						if (source?.id === 'root' || target?.id === 'root') {
 							return 100;
 						}
 						// Other links are shorter
@@ -118,7 +154,7 @@
 			// Stronger charge for more dynamic layout
 			.force(
 				'charge',
-				forceManyBody().strength((d) => {
+				forceManyBody<NodeDatum>().strength((d: NodeDatum) => {
 					// Relationships have stronger repulsion
 					if (d.type === 'relationship') return -300;
 					// Root has strongest repulsion
@@ -128,12 +164,10 @@
 				})
 			)
 			// Keep everything centered
-			.force('center', forceCenter(width / 2, height / 2))
-			// Prevent node overlap
+			.force('center', forceCenter<NodeDatum>(width / 2, height / 2))
 			.force(
 				'collide',
-				forceCollide((d) => {
-					// Size based on node type plus padding
+				forceCollide<NodeDatum>((d: NodeDatum) => {
 					if (d.type === 'root') return 25;
 					if (d.type === 'relationship') return 20;
 					return 15;
@@ -149,7 +183,6 @@
 			simulation.tick();
 		}
 
-		// Update reactivity and setup tick handler
 		simulation.on('tick', () => {
 			nodes = [...nodes];
 			links = [...links];
@@ -160,21 +193,20 @@
 		links = [...links];
 	}
 
-	function handleDragStart(event, node) {
+	function handleDragStart(event: MouseEvent, node: NodeDatum): void {
 		if (!simulation) return;
-
-		// Stop simulation during drag
 		simulation.alphaTarget(0.3).restart();
-
-		// Store current position
 		node.fx = node.x;
 		node.fy = node.y;
 	}
 
-	function handleDrag(event, node) {
+	function handleDrag(event: MouseEvent, node: NodeDatum): void {
 		// Get mouse position relative to SVG
-		const svgElement = event.target.ownerSVGElement;
-		const rect = svgElement.getBoundingClientRect();
+		const svgElement = event.target as SVGElement;
+		const ownerSVG = svgElement.ownerSVGElement;
+		if (!ownerSVG) return;
+
+		const rect = ownerSVG.getBoundingClientRect();
 		const x = event.clientX - rect.left;
 		const y = event.clientY - rect.top;
 
@@ -183,7 +215,7 @@
 		node.fy = y;
 	}
 
-	function handleDragEnd(event, node) {
+	function handleDragEnd(event: MouseEvent, node: NodeDatum): void {
 		if (!simulation) return;
 
 		// Release node after drag ends
@@ -192,50 +224,34 @@
 		node.fy = null;
 	}
 
-	// Define node colors based on type
-	function getNodeColor(type) {
-		switch (type) {
-			case 'root':
-				return '#ff7f0e';
-			case 'relationship':
-				return '#1f77b4';
-			case 'cid':
-				return '#2ca02c';
-			default:
-				return '#999';
-		}
-	}
+	// Scales
+	const colorScale = scaleOrdinal(schemeCategory10);
+	const nodeRadiusScale = scaleOrdinal<NodeDatum['type'], number>()
+		.domain(['root', 'relationship', 'cid'])
+		.range([20, 15, 10]);
 
-	// Define node size based on type
-	function getNodeRadius(type) {
-		switch (type) {
-			case 'root':
-				return 20;
-			case 'relationship':
-				return 15;
-			case 'cid':
-				return 10;
-			default:
-				return 8;
-		}
+	function getNodeColor(type: NodeDatum['type']): string {
+		return colorScale(type);
+	}
+	function getNodeRadius(type: NodeDatum['type']): number {
+		return nodeRadiusScale(type) || 8;
 	}
 
 	onMount(() => {
+		// Clean up simulation when component is destroyed
 		return () => {
-			// Clean up simulation when component is destroyed
 			if (simulation) simulation.stop();
 		};
 	});
 </script>
 
 <svg {width} {height} class="network-chart">
-	<!-- Render links -->
 	{#each links as link}
 		<line
-			x1={link.source.x || 0}
-			y1={link.source.y || 0}
-			x2={link.target.x || 0}
-			y2={link.target.y || 0}
+			x1={(link.source as NodeDatum).x || 0}
+			y1={(link.source as NodeDatum).y || 0}
+			x2={(link.target as NodeDatum).x || 0}
+			y2={(link.target as NodeDatum).y || 0}
 			stroke="#999"
 			stroke-opacity="0.8"
 			stroke-width="2"
@@ -243,7 +259,6 @@
 		</line>
 	{/each}
 
-	<!-- Render nodes -->
 	{#each nodes as node}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<g
@@ -257,14 +272,14 @@
 				r={getNodeRadius(node.type)}
 				fill={getNodeColor(node.type)}
 				stroke="#fff"
-				stroke-width="1.5"
+				stroke-width="1"
 			>
 			</circle>
 
 			<text
 				dy={node.type === 'root' ? 30 : node.type === 'relationship' ? 25 : 20}
 				text-anchor="middle"
-				font-size="10px"
+				font-size="9px"
 				fill="#333"
 			>
 				{node.name}
@@ -281,7 +296,6 @@
 		height: 100%;
 	}
 
-	/* Make nodes interactive */
 	g {
 		cursor: pointer;
 	}
