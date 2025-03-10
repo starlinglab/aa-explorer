@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { shortenCID } from '$lib/index';
+	import { shortenCID, navigateToCID } from '$lib/index';
 	import type { ListOfAttestations } from './types';
 
 	import * as d3 from 'd3';
@@ -23,16 +23,6 @@
 	interface LinkDatum extends SimulationLinkDatum<NodeDatum> {
 		source: string | NodeDatum;
 		target: string | NodeDatum;
-	}
-
-	// Navigation function - same as in TableOfMetadata
-	function handleLinkClick(event: Event, cid: string | undefined) {
-		if (!cid) return;
-		event.preventDefault();
-		const url = new URL(window.location.href);
-		url.searchParams.set('selectedCID', cid);
-		window.history.pushState({}, '', url);
-		window.dispatchEvent(new Event('popstate'));
 	}
 
 	// Extract relationships data from authenticatedRelationships with improved error handling
@@ -315,8 +305,8 @@
 					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 					<g
 						class="clickable"
-						on:click={(e) => handleLinkClick(e, node.cid)}
-						on:keydown={(e) => e.key === 'Enter' && handleLinkClick(e, node.cid)}
+						on:click={(e) => navigateToCID(e, node.cid)}
+						on:keydown={(e) => e.key === 'Enter' && navigateToCID(e, node.cid)}
 						tabindex="0"
 						role="link"
 						aria-label={`Navigate to ${node.name}`}

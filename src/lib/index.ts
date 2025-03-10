@@ -82,3 +82,19 @@ export const uint8ArrayToHex = (arr: Uint8Array): string => {
 		.map((byte) => byte.toString(16).padStart(2, '0'))
 		.join('');
 };
+
+/**
+ * Navigate to a CID by updating the URL parameters and triggering a popstate event.
+ * Used for in-app navigation between CIDs.
+ *
+ * @param event - The original event (click or keydown)
+ * @param cid - The CID to navigate to
+ */
+export function navigateToCID(event: Event, cid: string | undefined): void {
+	if (!cid) return;
+	event.preventDefault();
+	const url = new URL(window.location.href);
+	url.searchParams.set('selectedCID', cid);
+	window.history.pushState({}, '', url);
+	window.dispatchEvent(new Event('popstate'));
+}

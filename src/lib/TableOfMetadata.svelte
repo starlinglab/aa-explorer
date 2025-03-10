@@ -1,6 +1,6 @@
 <script lang="ts">
 	import VerifyButton from './VerifyButton.svelte';
-	import { uint8ArrayToHex, shortenCID } from '$lib/index';
+	import { uint8ArrayToHex, shortenCID, navigateToCID } from '$lib/index';
 	import { CID } from 'multiformats/cid';
 	import type {
 		ListOfAttestations,
@@ -21,14 +21,6 @@
 			(key) => att[key] || []
 		);
 	};
-
-	function handleLinkClick(event: MouseEvent, cid: string) {
-		event.preventDefault();
-		const url = new URL(window.location.href);
-		url.searchParams.set('selectedCID', cid);
-		window.history.pushState({}, '', url);
-		window.dispatchEvent(new Event('popstate'));
-	}
 </script>
 
 <table class="divide-y divide-gray-200">
@@ -70,7 +62,7 @@
 							<a
 								href={`/?selectedCID=${relationship.toString()}`}
 								class="pr-2"
-								on:click={(event) => handleLinkClick(event, relationship.toString())}
+								on:click={(event) => navigateToCID(event, relationship.toString())}
 							>
 								🔗 {shortenCID(relationship.toString())}
 							</a>
