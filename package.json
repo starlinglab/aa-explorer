@@ -29,6 +29,7 @@
 	"dependencies": {
 		"@ipld/dag-cbor": "^9.2.2",
 		"@noble/ed25519": "^2.2.3",
+		"d3": "^7.9.0",
 		"multiformats": "^13.3.2"
 	}
 }

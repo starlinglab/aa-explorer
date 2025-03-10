@@ -5,6 +5,7 @@
 	import NetworkChart from '../lib/NetworkChart.svelte';
 	import { fetchAllCIDs, fetchAllAttestations, shortenCID } from '$lib/index';
 
+
 	let data: { cids?: Array<string>; error?: string } = {};
 	let selectedCID: string | null = null;
 	let selectedAttestations: ListOfAttestations = [];
