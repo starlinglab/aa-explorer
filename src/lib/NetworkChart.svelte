@@ -7,23 +7,26 @@
 	export let authenticatedRelationships: ListOfAttestations = [];
 
 	// Extract relationships data from authenticatedRelationships
-	$: relationshipData = 
+	$: relationshipData =
 		authenticatedRelationships.filter((d) => d.key === 'children' || d.key === 'parents')[0]?.value
-			?.attestation?.value ||
-		{};
+			?.attestation?.value || {};
 
 	const width = 300;
 	const height = 300;
 
 	// Create node and link data structures
-	let nodes: any[] = [];
+	let nodes = [];
 	let links = [];
 	let simulation;
 
 	// Process relationship data into nodes and links
 	$: {
 		// Only process if we have valid relationship data
-		if (relationshipData && typeof relationshipData === 'object' && Object.keys(relationshipData).length > 0) {
+		if (
+			relationshipData &&
+			typeof relationshipData === 'object' &&
+			Object.keys(relationshipData).length > 0
+		) {
 			// Reset nodes and links
 			nodes = [
 				{
@@ -54,13 +57,27 @@
 					// Add individual CID nodes
 					items.forEach((item, i) => {
 						const cidNodeId = `${relType}-${i}`;
+
+						// Safely extract CID value and create display name
+						let cidValue = '';
+						let displayName = `${relType}-${i}`;
+
+						try {
+							if (item && typeof item === 'object' && '/' in item) {
+								cidValue = String(item['/'] || '');
+
+								if (cidValue && cidValue.length > 0) {
+									displayName = cidValue.substring(0, 10) + '...';
+								}
+							}
+						} catch (err) {
+							console.error('Error processing CID:', err);
+						}
+
 						nodes.push({
 							id: cidNodeId,
-							name:
-								item && typeof item === 'object' && '/' in item
-									? item['/'].substring(0, 10) + '...'
-									: `${relType}-${i}`,
-							cid: item && typeof item === 'object' && '/' in item ? item['/'] : '',
+							name: displayName,
+							cid: cidValue,
 							type: 'cid'
 						});
 
@@ -73,69 +90,71 @@
 				}
 			});
 
-			// Position nodes with a static layout (no CPU-intensive simulation)
+			// Set up D3 force simulation
 			initializeSimulation();
 		}
 	}
 
-	// Position nodes statically without running heavy simulations
+	// Let D3 force layout handle node positioning
 	function initializeSimulation() {
 		// Skip initialization if no nodes
 		if (nodes.length === 0) return;
-		
-		// Root node at center
-		nodes[0].x = width / 2;
-		nodes[0].y = height / 2;
-		
-		// Position relationship nodes in a circle around the root
-		const relationshipNodes = nodes.filter(n => n.type === 'relationship');
-		const relationshipCount = relationshipNodes.length || 1; // Avoid division by zero
-		
-		relationshipNodes.forEach((node, i) => {
-			const angle = (i / relationshipCount) * 2 * Math.PI;
-			const radius = 70;
-			node.x = width / 2 + radius * Math.cos(angle);
-			node.y = height / 2 + radius * Math.sin(angle);
-			
-			// Find children IDs for this relationship node
-			const childIDs = links
-				.filter(link => link.source === node.id || link.source.id === node.id)
-				.map(link => link.target);
-			
-			// Find the actual child nodes
-			const childNodes = nodes.filter(n => 
-				childIDs.includes(n.id) || childIDs.some(id => id && id.id === n.id)
-			);
-			
-			// Position children in an arc around their parent
-			const childCount = childNodes.length || 1;
-			childNodes.forEach((childNode, j) => {
-				const arcAngle = 0.8; // Arc width in radians
-				const childAngle = angle - (arcAngle/2) + (arcAngle * j / childCount);
-				const childRadius = 130;
-				childNode.x = width / 2 + childRadius * Math.cos(childAngle);
-				childNode.y = height / 2 + childRadius * Math.sin(childAngle);
-			});
-		});
-		
-		// Set up a very lightweight simulation just for dragging
-		// We won't run any ticks on initial load
-		simulation = forceSimulation()
-			.nodes(nodes)
-			.force('link', forceLink(links).id(d => d.id).distance(80))
-			.force('charge', forceManyBody().strength(-150))
+
+		// Set up a more dynamic force simulation
+		simulation = forceSimulation(nodes)
+			.force(
+				'link',
+				forceLink(links)
+					.id((d) => d.id)
+					.distance((node) => {
+						// Root to relationship links are longer
+						if (node.source.id === 'root' || node.target.id === 'root') {
+							return 100;
+						}
+						// Other links are shorter
+						return 60;
+					})
+			)
+			// Stronger charge for more dynamic layout
+			.force(
+				'charge',
+				forceManyBody().strength((d) => {
+					// Relationships have stronger repulsion
+					if (d.type === 'relationship') return -300;
+					// Root has strongest repulsion
+					if (d.type === 'root') return -500;
+					// CIDs have weaker repulsion
+					return -100;
+				})
+			)
+			// Keep everything centered
 			.force('center', forceCenter(width / 2, height / 2))
-			.alphaTarget(0)
-			.alphaDecay(0.1)
-			.on('tick', () => {
-				// Only called during dragging
-				nodes = [...nodes];
-				links = [...links];
-			});
-			
-		// Immediately stop the simulation to save CPU
-		simulation.stop();
-		
+			// Prevent node overlap
+			.force(
+				'collide',
+				forceCollide((d) => {
+					// Size based on node type plus padding
+					if (d.type === 'root') return 25;
+					if (d.type === 'relationship') return 20;
+					return 15;
+				})
+			)
+			// Make simulation run more gradually
+			.alpha(1)
+			.alphaDecay(0.02)
+			.velocityDecay(0.3);
+
+		// Run a few ticks to get initial positions
+		for (let i = 0; i < 20; i++) {
+			simulation.tick();
+		}
+
+		// Update reactivity and setup tick handler
+		simulation.on('tick', () => {
+			nodes = [...nodes];
+			links = [...links];
+		});
+
 		// Force update arrays to trigger Svelte reactivity
 		nodes = [...nodes];
 		links = [...links];
