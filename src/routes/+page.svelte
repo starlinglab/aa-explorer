@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { ListOfAttestations } from '../lib/types';
 	import TableOfMetadata from '../lib/TableOfMetadata.svelte';
+	import NetworkChart from '../lib/NetworkChart.svelte';
 	import { fetchAllCIDs, fetchAllAttestations, shortenCID } from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
@@ -135,9 +136,7 @@
 				<div
 					class="w-1/2 p-4 border-1 border-solid border-gray-200 flex items-center justify-center"
 				>
-					<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
-						<rect width="100" height="100" fill="gray" />
-					</svg>
+					<NetworkChart {authenticatedRelationships} />
 				</div>
 			</div>
 		{/if}
