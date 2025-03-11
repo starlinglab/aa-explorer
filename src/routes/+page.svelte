@@ -1,15 +1,35 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { ListOfAttestations } from '../lib/types';
+	import type { Endpoint } from '$lib/index';
 	import TableOfMetadata from '../lib/TableOfMetadata.svelte';
 	import NetworkChart from '../lib/NetworkChart.svelte';
-	import { fetchAllCIDs, fetchAllAttestations, shortenCID } from '$lib/index';
+	import { fetchAllCIDs, fetchAllAttestations, shortenCID, ENDPOINTS } from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
 	let selectedCID: string | null = null;
 	let selectedAttestations: ListOfAttestations = [];
 	let selectedError: string | null = null;
 	let isLoading: boolean = false;
+
+	// Function to change the order of endpoints without reloading data
+	function reorderEndpoints(primaryEndpoint: Endpoint) {
+		const otherEndpoints = ENDPOINTS.filter((endpoint) => endpoint !== primaryEndpoint);
+		ENDPOINTS.length = 0;
+		ENDPOINTS.push(primaryEndpoint, ...otherEndpoints);
+
+		// Update the isPrimarySource flag for each attestation instead of reloading
+		if (selectedAttestations.length > 0) {
+			// trigger reactivity
+			const updatedAttestations = selectedAttestations.map((att) => ({
+				...att,
+				isPrimarySource: att.sourceEndpoint === primaryEndpoint
+			}));
+
+			// Reassign to trigger Svelte reactivity
+			selectedAttestations = updatedAttestations;
+		}
+	}
 
 	async function fetchData() {
 		try {
@@ -138,6 +158,24 @@
 		<h2 class="text-lg font-bold mb-1">Attestations</h2>
 		{#if selectedCID}
 			<p class="text-sm text-gray-700 mb-2">For CID: {shortenCID(selectedCID)}</p>
+
+			<!-- Data Source Selection with fixed button order -->
+			<div class="mb-3 flex space-x-2">
+				<span class="text-sm text-gray-700">Primary Source:</span>
+				<button
+					class={`text-xs px-2 py-1 rounded ${ENDPOINTS[0] === 'https://chris.aa.prod.starlinglab.org' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+					on:click={() => reorderEndpoints('https://chris.aa.prod.starlinglab.org')}
+				>
+					chris
+				</button>
+				<button
+					class={`text-xs px-2 py-1 rounded ${ENDPOINTS[0] === 'https://kira.aa.prod.starlinglab.org' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+					on:click={() => reorderEndpoints('https://kira.aa.prod.starlinglab.org')}
+				>
+					kira
+				</button>
+			</div>
+
 			{#if isLoading}
 				<p class="text-sm text-gray-500">Loading attestations...</p>
 			{:else if selectedError}

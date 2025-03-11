@@ -21,6 +21,15 @@
 			(key) => att[key] || []
 		);
 	};
+
+	$: sortedData = [...data].sort((a, b) => {
+		// Primary source attestations come first
+		if (a.isPrimarySource && !b.isPrimarySource) return -1;
+		if (!a.isPrimarySource && b.isPrimarySource) return 1;
+
+		// If both from same source, sort by key
+		return getKey(a).localeCompare(getKey(b));
+	});
 </script>
 
 <table class="divide-y divide-gray-200">
@@ -35,8 +44,10 @@
 		</tr>
 	</thead>
 	<tbody class="bg-white divide-y divide-gray-100">
-		{#each data as attribute: AttestationValue, index (attribute.key + Math.random())}
-			<tr class={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+		{#each sortedData as attribute: AttestationValue, index (attribute.key + Math.random())}
+			<tr
+				class={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${attribute.isPrimarySource === false ? 'opacity-60' : ''}`}
+			>
 				<td class="px-4 py-2 text-l text-gray-700" style="width: 10%">
 					<div class="flex space-x-2">
 						<VerifyButton copy={'✔️'} kind={'hash'} data={attribute} {selectedCID} />
@@ -46,6 +57,11 @@
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-700 text-right" style="width: 10%">
 					{getKey(attribute)}:
+					{#if attribute.sourceEndpoint}
+						<div class="text-xs text-gray-400">
+							{attribute.sourceEndpoint.split('.')[0].replace('https://', '')}
+						</div>
+					{/if}
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-700" style="width: 70%">
 					{#if getKey(attribute) === 'produced_by'}

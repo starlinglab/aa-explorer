@@ -6,7 +6,8 @@ export type Endpoint =
 	| 'https://kira.aa.prod.starlinglab.org';
 const ENDPOINT_CHRIS: Endpoint = 'https://chris.aa.prod.starlinglab.org';
 const ENDPOINT_KIRA: Endpoint = 'https://kira.aa.prod.starlinglab.org';
-const ENDPOINTS: Endpoint[] = [ENDPOINT_CHRIS, ENDPOINT_KIRA];
+// Can be reordered!
+export let ENDPOINTS: Endpoint[] = [ENDPOINT_CHRIS, ENDPOINT_KIRA];
 
 // Helper: Checks the response and returns its ArrayBuffer.
 async function handleResponse(response: Response): Promise<ArrayBuffer> {
@@ -64,13 +65,18 @@ async function fetchAttestationsFromEndpoint(endpoint: Endpoint, cid: string): P
  * Fetches attestations for a given CID from multiple endpoints.
  *
  * @param {string} cid - The content identifier for which to fetch attestations.
- * @returns {Promise<{}[]>} A promise that resolves to an array of attestation key-value pairs.
+ * @returns {Promise<{}[]>} A promise that resolves to an array of attestation key-value pairs with source information.
  */
 export async function fetchAllAttestations(cid: string): Promise<{}[]> {
 	const results = await Promise.all(
-		ENDPOINTS.map(async (endpoint) => {
+		ENDPOINTS.map(async (endpoint, endpointIndex) => {
 			const attestations = await fetchAttestationsFromEndpoint(endpoint, cid);
-			return Object.entries(attestations).map(([key, value]) => ({ key, value }));
+			return Object.entries(attestations).map(([key, value]) => ({
+				key,
+				value,
+				sourceEndpoint: endpoint,
+				isPrimarySource: endpointIndex === 0 // First endpoint in order is considered primary
+			}));
 		})
 	);
 	return results.flat();
