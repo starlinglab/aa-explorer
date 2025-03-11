@@ -1,11 +1,14 @@
 <script lang="ts">
 	import type { IndividualAttestation } from './types';
 	import { verifyData } from './verification';
+	import VerificationModal from './VerificationModal.svelte';
 
 	export let copy;
 	export let kind: 'hash' | 'signature' | 'timestamp';
 	export let data: IndividualAttestation;
 	export let selectedCID: string | null = null;
+
+	let showModal = false;
 
 	async function dataVerifies(): Promise<boolean> {
 		return await verifyData(kind, data, selectedCID);
@@ -13,9 +16,16 @@
 
 	function handleClick(event: MouseEvent) {
 		event.stopPropagation();
-		dataVerifies();
+		showModal = true;
 	}
 </script>
+
+<VerificationModal
+	bind:showModal
+	{kind}
+	{data}
+	{selectedCID}
+/>
 
 {#await dataVerifies()}
 	Loading...
