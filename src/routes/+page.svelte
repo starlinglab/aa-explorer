@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { ListOfAttestations } from '../lib/types';
 	import TableOfMetadata from '../lib/TableOfMetadata.svelte';
+	import NetworkChart from '../lib/NetworkChart.svelte';
 	import { fetchAllCIDs, fetchAllAttestations, shortenCID } from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
@@ -10,30 +11,35 @@
 	let selectedError: string | null = null;
 	let isLoading: boolean = false;
 
-	onMount(() => {
-		const fetchData = async () => {
-			try {
-				const cids = await fetchAllCIDs();
-				data.cids = cids;
-			} catch (err: any) {
-				data.error = err.message;
-			}
-		};
+	async function fetchData() {
+		try {
+			const cids = await fetchAllCIDs();
+			data.cids = cids;
+		} catch (err: any) {
+			data.error = err.message;
+		}
+	}
 
-		fetchData();
-
-		// Check for selectedCID in URL and load attestations if present
+	function checkSelectedCID() {
 		const urlParams = new URLSearchParams(window.location.search);
 		const initialCID = urlParams.get('selectedCID');
-		if (initialCID) {
+		if (initialCID && initialCID !== selectedCID) {
 			loadAttestations(initialCID);
 		}
+	}
 
-		document.addEventListener('click', handleClickOutside);
+	onMount(() => {
+		fetchData();
+		checkSelectedCID();
+
+		window.addEventListener('popstate', checkSelectedCID);
 		document.addEventListener('keydown', handleKeyDown);
+		// document.addEventListener('click', handleClickOutside);
+
 		return () => {
-			document.removeEventListener('click', handleClickOutside);
+			window.removeEventListener('popstate', checkSelectedCID);
 			document.removeEventListener('keydown', handleKeyDown);
+			// document.removeEventListener('click', handleClickOutside);
 		};
 	});
 
@@ -43,18 +49,22 @@
 		const url = new URL(window.location.href);
 		url.searchParams.set('selectedCID', cid);
 		window.history.pushState({}, '', url);
+		window.dispatchEvent(new Event('popstate')); // Manually trigger popstate event
 		selectedError = null;
 		isLoading = true;
 		try {
-			selectedAttestations = (await fetchAllAttestations(cid)) as ListOfAttestations;
+			const attestations = await fetchAllAttestations(cid);
+			selectedAttestations = attestations as ListOfAttestations;
 		} catch (err: any) {
 			selectedError = err.message;
+			console.error(`Error fetching attestations: ${err.message}`);
 		} finally {
 			isLoading = false;
 		}
 	}
 
 	// Handle click on whitespace or Esc key to reset selectedCID
+	// NOTE: not used to permit clicking around and navigating to new CIDs
 	function handleClickOutside(event: MouseEvent) {
 		if (!(event.target as HTMLElement).closest('.cid-item')) {
 			selectedCID = null;
@@ -71,7 +81,7 @@
 		'asset_subcollection',
 		'asset_collection',
 		'children',
-		'parent'
+		'parents'
 	];
 
 	$: authenticatedMetadata = selectedAttestations.filter(
@@ -83,8 +93,8 @@
 	);
 </script>
 
-<div class="flex flex-col h-screen">
-	<div class="flex-1 p-4 overflow-auto">
+<div class="flex h-screen">
+	<div class="flex-2/3 p-4 overflow-auto">
 		{#if data.error}
 			<p class="text-red-500">Error: {data.error}</p>
 		{:else if !data.cids || data.cids.length === 0}
@@ -96,7 +106,7 @@
 						on:click={() => loadAttestations(cid)}
 						on:keydown={(event) => event.key === 'Enter' && loadAttestations(cid)}
 						class="cid-item relative z-0 w-30 h-30 bg-gray-200 border border-dashed border-gray-300
-		transition-transform duration-200 transform {selectedCID === cid
+        transition-transform duration-200 transform {selectedCID === cid
 							? 'scale-140 bg-gray-300 border-solid border-gray-800 z-10'
 							: 'hover:scale-120 hover:bg-gray-300 hover:border-solid hover:border-gray-800 hover:z-10 hover:cursor-pointer'}"
 						title={cid.toString()}
@@ -117,7 +127,14 @@
 		{/if}
 	</div>
 
-	<div class="flex-1 p-4 border-t border-gray-300 overflow-auto">
+	<div class="flex-1/3 p-3 border-l border-gray-300">
+		{#if selectedCID}
+			<div class="flex">
+				<div class="w-full p-1">
+					<img src={`https://files.dev.starlinglab.org/${selectedCID}`} alt="" class="max-w-full" />
+				</div>
+			</div>
+		{/if}
 		<h2 class="text-lg font-bold mb-1">Attestations</h2>
 		{#if selectedCID}
 			<p class="text-sm text-gray-700 mb-2">For CID: {shortenCID(selectedCID)}</p>
@@ -131,6 +148,12 @@
 					<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
 					<h4 class="text-base font-semibold mt-4">Authenticated Relationships</h4>
 					<TableOfMetadata data={authenticatedRelationships} {selectedCID}></TableOfMetadata>
+
+					<!-- Network chart under the tables -->
+					<h4 class="text-base font-semibold mt-4">Relationship Network</h4>
+					<div class="w-full">
+						<NetworkChart {authenticatedRelationships} />
+					</div>
 				</div>
 			{/if}
 		{:else}
