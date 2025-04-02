@@ -1,47 +1,51 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Modal from './Modal.svelte';
-	import { ENDPOINTS, type Endpoint, saveEndpointsToStorage } from './index';
+	import { type EndpointConfig, endpoints } from './index';
 
 	export let showModal = false;
 
-	let endpointsList: { url: Endpoint; id: string }[] = [];
-
-	// Initialize the endpoints list on component mount
-	onMount(() => {
-		refreshEndpointsList();
-	});
-
-	function refreshEndpointsList() {
-		endpointsList = ENDPOINTS.map((url, index) => ({
-			url,
+	let endpointsList: (EndpointConfig & { id: string })[] = [];
+	
+	// Subscribe to the endpoints store and update our local list whenever it changes
+	const unsubscribe = endpoints.subscribe(currentEndpoints => {
+		endpointsList = currentEndpoints.map((endpoint, index) => ({
+			name: endpoint.name,
+			url: endpoint.url,
 			id: `endpoint-${index}`
 		}));
-	}
+	});
+	
+	// Clean up subscription when component is destroyed
+	onMount(() => {
+		return () => {
+			unsubscribe();
+		};
+	});
 
-	// Update the global ENDPOINTS array when the user saves changes
+	// Update the endpoints store when the user saves changes
 	function saveChanges() {
-		// Clear the current endpoints array
-		ENDPOINTS.length = 0;
-
-		// Add the reordered endpoints
-		endpointsList.forEach((item) => {
-			ENDPOINTS.push(item.url);
-		});
-
-		// Save to localStorage
-		saveEndpointsToStorage();
-
+		// Update the endpoints store with the new configuration
+		const updatedEndpoints = endpointsList.map(item => ({
+			name: item.name,
+			url: item.url
+		}));
+		
+		endpoints.set(updatedEndpoints);
+		
 		// Close the modal
 		showModal = false;
 	}
 
 	// Add a new endpoint
 	function addEndpoint() {
-		const newEndpoint = 'https://' as Endpoint;
+		const newEndpoint = {
+			name: 'New Endpoint',
+			url: 'https://'
+		};
 		endpointsList = [
 			...endpointsList,
-			{ url: newEndpoint, id: `endpoint-${endpointsList.length}` }
+			{ ...newEndpoint, id: `endpoint-${endpointsList.length}` }
 		];
 	}
 
@@ -50,10 +54,10 @@
 		endpointsList = endpointsList.filter((_, i) => i !== index);
 	}
 
-	// Handle endpoint URL changes
-	function handleEndpointChange(index: number, newValue: string) {
+	// Handle endpoint field changes
+	function handleEndpointChange(index: number, field: 'name' | 'url', newValue: string) {
 		const updatedList = [...endpointsList];
-		updatedList[index].url = newValue as Endpoint;
+		updatedList[index][field] = newValue;
 		endpointsList = updatedList;
 	}
 
@@ -96,12 +100,22 @@
 					on:drop={() => handleDrop(index)}
 				>
 					<div class="cursor-move p-1">☰</div>
-					<input
-						type="text"
-						class="flex-grow p-2 border border-gray-300 rounded"
-						value={endpoint.url}
-						on:input={(e) => handleEndpointChange(index, e.currentTarget.value)}
-					/>
+					<div class="flex-grow grid grid-cols-2 gap-2">
+						<input
+							type="text"
+							class="p-2 border border-gray-300 rounded"
+							placeholder="Display Name"
+							value={endpoint.name}
+							on:input={(e) => handleEndpointChange(index, 'name', e.currentTarget.value)}
+						/>
+						<input
+							type="text"
+							class="p-2 border border-gray-300 rounded"
+							placeholder="URL"
+							value={endpoint.url}
+							on:input={(e) => handleEndpointChange(index, 'url', e.currentTarget.value)}
+						/>
+					</div>
 					{#if endpointsList.length > 1}
 						<button
 							class="p-1 text-red-500 hover:text-red-700"

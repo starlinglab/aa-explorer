@@ -1,15 +1,11 @@
 <script lang="ts">
 	import '../app.css';
-	import { onMount } from 'svelte';
 	import SettingsButton from '$lib/SettingsButton.svelte';
-	import { loadEndpointsFromStorage } from '$lib/index';
+	// With the new store approach, endpoints are loaded automatically
+	// so we don't need to call loadEndpointsFromStorage anymore
+	import { endpoints } from '$lib/index';
 	
 	let { children } = $props();
-	
-	onMount(() => {
-		// Load saved endpoints on app start
-		loadEndpointsFromStorage();
-	});
 </script>
 
 <SettingsButton />

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { ListOfAttestations } from '../lib/types';
-	import type { Endpoint } from '$lib/index';
+	import type { EndpointConfig } from '$lib/index';
 	import TableOfMetadata from '../lib/TableOfMetadata.svelte';
 	import NetworkChart from '../lib/NetworkChart.svelte';
-	import { fetchAllCIDs, fetchAllAttestations, shortenCID, ENDPOINTS, saveEndpointsToStorage } from '$lib/index';
+	import { fetchAllCIDs, fetchAllAttestations, shortenCID, endpoints } from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
 	let selectedCID: string | null = null;
@@ -12,26 +12,48 @@
 	let selectedError: string | null = null;
 	let isLoading: boolean = false;
 
-	// Function to change the order of endpoints without reloading data
-	function reorderEndpoints(primaryEndpoint: Endpoint) {
-		const otherEndpoints = ENDPOINTS.filter((endpoint) => endpoint !== primaryEndpoint);
-		ENDPOINTS.length = 0;
-		ENDPOINTS.push(primaryEndpoint, ...otherEndpoints);
+	// Store current endpoints state
+	let currentEndpoints: EndpointConfig[] = [];
+	
+	// Subscribe to the endpoints store
+	const unsubscribe = endpoints.subscribe(value => {
+		currentEndpoints = value;
 		
-		// Save the updated endpoints order to localStorage
-		saveEndpointsToStorage();
-
-		// Update the isPrimarySource flag for each attestation instead of reloading
-		if (selectedAttestations.length > 0) {
-			// trigger reactivity
-			const updatedAttestations = selectedAttestations.map((att) => ({
+		// Update the isPrimarySource flag for attestations when endpoints change
+		if (selectedAttestations.length > 0 && value.length > 0) {
+			// Get the primary endpoint URL
+			const primaryEndpointUrl = value[0].url;
+			
+			// Update attestations with the new primary source
+			selectedAttestations = selectedAttestations.map((att) => ({
 				...att,
-				isPrimarySource: att.sourceEndpoint === primaryEndpoint
+				isPrimarySource: att.sourceEndpoint === primaryEndpointUrl
 			}));
-
-			// Reassign to trigger Svelte reactivity
-			selectedAttestations = updatedAttestations;
 		}
+	});
+	
+	// Clean up subscription when component is destroyed
+	onMount(() => {
+		fetchData();
+		checkSelectedCID();
+
+		window.addEventListener('popstate', checkSelectedCID);
+		document.addEventListener('keydown', handleKeyDown);
+		
+		return () => {
+			unsubscribe();
+			window.removeEventListener('popstate', checkSelectedCID);
+			document.removeEventListener('keydown', handleKeyDown);
+		};
+	});
+	
+	// Function to change the order of endpoints without reloading data
+	function reorderEndpoints(primaryEndpoint: EndpointConfig) {
+		const otherEndpoints = currentEndpoints.filter((endpoint) => endpoint.url !== primaryEndpoint.url);
+		const reorderedEndpoints = [primaryEndpoint, ...otherEndpoints];
+		
+		// Update the store
+		endpoints.set(reorderedEndpoints);
 	}
 
 	async function fetchData() {
@@ -51,21 +73,6 @@
 		}
 	}
 
-	onMount(() => {
-		fetchData();
-		checkSelectedCID();
-
-		window.addEventListener('popstate', checkSelectedCID);
-		document.addEventListener('keydown', handleKeyDown);
-		// document.addEventListener('click', handleClickOutside);
-
-		return () => {
-			window.removeEventListener('popstate', checkSelectedCID);
-			document.removeEventListener('keydown', handleKeyDown);
-			// document.removeEventListener('click', handleClickOutside);
-		};
-	});
-
 	// When an item is clicked, fetch its attestations.
 	async function loadAttestations(cid: string) {
 		selectedCID = cid;
@@ -83,14 +90,6 @@
 			console.error(`Error fetching attestations: ${err.message}`);
 		} finally {
 			isLoading = false;
-		}
-	}
-
-	// Handle click on whitespace or Esc key to reset selectedCID
-	// NOTE: not used to permit clicking around and navigating to new CIDs
-	function handleClickOutside(event: MouseEvent) {
-		if (!(event.target as HTMLElement).closest('.cid-item')) {
-			selectedCID = null;
 		}
 	}
 
@@ -165,12 +164,12 @@
 			<!-- Data Source Selection with dynamic buttons -->
 			<div class="mb-3 flex flex-wrap gap-2">
 				<span class="text-sm text-gray-700">Primary Source:</span>
-				{#each ENDPOINTS as endpoint}
+				{#each currentEndpoints as endpoint}
 					<button
-						class={`text-xs px-2 py-1 rounded ${ENDPOINTS[0] === endpoint ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+						class={`text-xs px-2 py-1 rounded ${currentEndpoints[0]?.url === endpoint.url ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
 						on:click={() => reorderEndpoints(endpoint)}
 					>
-						{endpoint.replace(/^https:\/\//, '').replace(/\.aa\.prod\.starlinglab\.org$/, '').replace(/\..*$/, '')}
+						{endpoint.name}
 					</button>
 				{/each}
 			</div>
