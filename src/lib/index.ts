@@ -1,13 +1,34 @@
 import { decode as dagCBORDecode } from '@ipld/dag-cbor';
 import { CID } from 'multiformats/cid';
 
-export type Endpoint =
-	| 'https://chris.aa.prod.starlinglab.org'
-	| 'https://kira.aa.prod.starlinglab.org';
+export type Endpoint = string;
 const ENDPOINT_CHRIS: Endpoint = 'https://chris.aa.prod.starlinglab.org';
 const ENDPOINT_KIRA: Endpoint = 'https://kira.aa.prod.starlinglab.org';
-// Can be reordered!
 export let ENDPOINTS: Endpoint[] = [ENDPOINT_CHRIS, ENDPOINT_KIRA];
+
+// Save endpoints to localStorage
+export function saveEndpointsToStorage() {
+	localStorage.setItem('aa-explorer-endpoints', JSON.stringify(ENDPOINTS));
+}
+
+// Load endpoints from localStorage
+export function loadEndpointsFromStorage(): boolean {
+	const storedEndpoints = localStorage.getItem('aa-explorer-endpoints');
+	if (storedEndpoints) {
+		try {
+			const parsedEndpoints = JSON.parse(storedEndpoints) as Endpoint[];
+			// Ensure we have at least one endpoint
+			if (parsedEndpoints && parsedEndpoints.length > 0) {
+				ENDPOINTS.length = 0;
+				parsedEndpoints.forEach((endpoint) => ENDPOINTS.push(endpoint));
+				return true;
+			}
+		} catch (e) {
+			console.error('Failed to parse stored endpoints:', e);
+		}
+	}
+	return false;
+}
 
 // Helper: Checks the response and returns its ArrayBuffer.
 async function handleResponse(response: Response): Promise<ArrayBuffer> {

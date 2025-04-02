@@ -4,7 +4,7 @@
 	import type { Endpoint } from '$lib/index';
 	import TableOfMetadata from '../lib/TableOfMetadata.svelte';
 	import NetworkChart from '../lib/NetworkChart.svelte';
-	import { fetchAllCIDs, fetchAllAttestations, shortenCID, ENDPOINTS } from '$lib/index';
+	import { fetchAllCIDs, fetchAllAttestations, shortenCID, ENDPOINTS, saveEndpointsToStorage } from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
 	let selectedCID: string | null = null;
@@ -17,6 +17,9 @@
 		const otherEndpoints = ENDPOINTS.filter((endpoint) => endpoint !== primaryEndpoint);
 		ENDPOINTS.length = 0;
 		ENDPOINTS.push(primaryEndpoint, ...otherEndpoints);
+		
+		// Save the updated endpoints order to localStorage
+		saveEndpointsToStorage();
 
 		// Update the isPrimarySource flag for each attestation instead of reloading
 		if (selectedAttestations.length > 0) {
@@ -159,21 +162,17 @@
 		{#if selectedCID}
 			<p class="text-sm text-gray-700 mb-2">For CID: {shortenCID(selectedCID)}</p>
 
-			<!-- Data Source Selection with fixed button order -->
-			<div class="mb-3 flex space-x-2">
+			<!-- Data Source Selection with dynamic buttons -->
+			<div class="mb-3 flex flex-wrap gap-2">
 				<span class="text-sm text-gray-700">Primary Source:</span>
-				<button
-					class={`text-xs px-2 py-1 rounded ${ENDPOINTS[0] === 'https://chris.aa.prod.starlinglab.org' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-					on:click={() => reorderEndpoints('https://chris.aa.prod.starlinglab.org')}
-				>
-					chris
-				</button>
-				<button
-					class={`text-xs px-2 py-1 rounded ${ENDPOINTS[0] === 'https://kira.aa.prod.starlinglab.org' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-					on:click={() => reorderEndpoints('https://kira.aa.prod.starlinglab.org')}
-				>
-					kira
-				</button>
+				{#each ENDPOINTS as endpoint}
+					<button
+						class={`text-xs px-2 py-1 rounded ${ENDPOINTS[0] === endpoint ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+						on:click={() => reorderEndpoints(endpoint)}
+					>
+						{endpoint.replace(/^https:\/\//, '').replace(/\.aa\.prod\.starlinglab\.org$/, '').replace(/\..*$/, '')}
+					</button>
+				{/each}
 			</div>
 
 			{#if isLoading}
