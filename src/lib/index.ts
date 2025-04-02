@@ -1,13 +1,16 @@
 import { decode as dagCBORDecode } from '@ipld/dag-cbor';
 import { CID } from 'multiformats/cid';
+import { get } from 'svelte/store';
+import { endpoints } from './stores';
 
-export type Endpoint =
-	| 'https://chris.aa.prod.starlinglab.org'
-	| 'https://kira.aa.prod.starlinglab.org';
-const ENDPOINT_CHRIS: Endpoint = 'https://chris.aa.prod.starlinglab.org';
-const ENDPOINT_KIRA: Endpoint = 'https://kira.aa.prod.starlinglab.org';
-// Can be reordered!
-export let ENDPOINTS: Endpoint[] = [ENDPOINT_CHRIS, ENDPOINT_KIRA];
+// Define a structured endpoint type with name and url
+export interface EndpointConfig {
+  name: string;
+  url: string;
+}
+
+// Export the endpoints store for direct use
+export { endpoints };
 
 // Helper: Checks the response and returns its ArrayBuffer.
 async function handleResponse(response: Response): Promise<ArrayBuffer> {
@@ -31,11 +34,11 @@ async function fetchAndDecode(url: string): Promise<any> {
 /**
  * Fetch all CIDs from a REST endpoint.
  *
- * @param endpoint - Base URL.
+ * @param endpointConfig - Endpoint configuration with url and name.
  * @returns A Promise resolving to an array of CIDs.
  */
-async function fetchCIDsFromEndpoint(endpoint: Endpoint): Promise<string[]> {
-	const url = `${endpoint}/v1/cids`;
+async function fetchCIDsFromEndpoint(endpointConfig: EndpointConfig): Promise<string[]> {
+	const url = `${endpointConfig.url}/v1/cids`;
 	return fetchAndDecode(url);
 }
 
@@ -45,19 +48,20 @@ async function fetchCIDsFromEndpoint(endpoint: Endpoint): Promise<string[]> {
  * @returns {Promise<string[]>} A promise that resolves to an array of CIDs.
  */
 export async function fetchAllCIDs(): Promise<string[]> {
-	const results = await Promise.all(ENDPOINTS.map((endpoint) => fetchCIDsFromEndpoint(endpoint)));
+	const currentEndpoints = get(endpoints);
+	const results = await Promise.all(currentEndpoints.map((endpoint) => fetchCIDsFromEndpoint(endpoint)));
 	return results.flat();
 }
 
 /**
  * Fetch attestations from a specific endpoint for a given CID.
  *
- * @param endpoint - The endpoint to fetch from.
+ * @param endpointConfig - The endpoint configuration to fetch from.
  * @param cid - The CID for which to fetch attestations.
  * @returns A Promise that resolves to a map of attestations.
  */
-async function fetchAttestationsFromEndpoint(endpoint: Endpoint, cid: string): Promise<{}> {
-	const url = `${endpoint}/v1/c/${cid}`;
+async function fetchAttestationsFromEndpoint(endpointConfig: EndpointConfig, cid: string): Promise<{}> {
+	const url = `${endpointConfig.url}/v1/c/${cid}`;
 	return fetchAndDecode(url);
 }
 
@@ -68,13 +72,15 @@ async function fetchAttestationsFromEndpoint(endpoint: Endpoint, cid: string): P
  * @returns {Promise<{}[]>} A promise that resolves to an array of attestation key-value pairs with source information.
  */
 export async function fetchAllAttestations(cid: string): Promise<{}[]> {
+	const currentEndpoints = get(endpoints);
 	const results = await Promise.all(
-		ENDPOINTS.map(async (endpoint, endpointIndex) => {
+		currentEndpoints.map(async (endpoint, endpointIndex) => {
 			const attestations = await fetchAttestationsFromEndpoint(endpoint, cid);
 			return Object.entries(attestations).map(([key, value]) => ({
 				key,
 				value,
-				sourceEndpoint: endpoint,
+				sourceEndpoint: endpoint.url,
+				sourceName: endpoint.name,
 				isPrimarySource: endpointIndex === 0 // First endpoint in order is considered primary
 			}));
 		})

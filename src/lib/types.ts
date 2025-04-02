@@ -44,6 +44,7 @@ export type IndividualAttestation = {
 	key: string; 
 	value: AttestationValue; 
 	sourceEndpoint?: string;
+	sourceName?: string;
 	isPrimarySource?: boolean;
 };
 export type ListOfAttestations = IndividualAttestation[];

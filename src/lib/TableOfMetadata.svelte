@@ -44,7 +44,7 @@
 		</tr>
 	</thead>
 	<tbody class="bg-white divide-y divide-gray-100">
-		{#each sortedData as attribute: AttestationValue, index (attribute.key + Math.random())}
+		{#each sortedData as attribute, index (attribute.key + Math.random())}
 			<tr
 				class={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${attribute.isPrimarySource === false ? 'opacity-60' : ''}`}
 			>
@@ -57,7 +57,11 @@
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-700 text-right" style="width: 10%">
 					{getKey(attribute)}:
-					{#if attribute.sourceEndpoint}
+					{#if attribute.sourceName}
+						<div class="text-xs text-gray-400">
+							{attribute.sourceName}
+						</div>
+					{:else if attribute.sourceEndpoint}
 						<div class="text-xs text-gray-400">
 							{attribute.sourceEndpoint.split('.')[0].replace('https://', '')}
 						</div>
