@@ -4,7 +4,7 @@ import type { EndpointConfig } from './index';
 // Initial endpoint configs
 const defaultEndpoints: EndpointConfig[] = [
 	{
-		name: 'DG',
+		name: 'D. Guttenfelder',
 		url: 'https://stanford.aa.dev.starlinglab.org'
 	}
 	// {

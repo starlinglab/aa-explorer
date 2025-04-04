@@ -14,16 +14,16 @@
 
 	// Store current endpoints state
 	let currentEndpoints: EndpointConfig[] = [];
-	
+
 	// Subscribe to the endpoints store
-	const unsubscribe = endpoints.subscribe(value => {
+	const unsubscribe = endpoints.subscribe((value) => {
 		currentEndpoints = value;
-		
+
 		// Update the isPrimarySource flag for attestations when endpoints change
 		if (selectedAttestations.length > 0 && value.length > 0) {
 			// Get the primary endpoint URL
 			const primaryEndpointUrl = value[0].url;
-			
+
 			// Update attestations with the new primary source
 			selectedAttestations = selectedAttestations.map((att) => ({
 				...att,
@@ -31,7 +31,7 @@
 			}));
 		}
 	});
-	
+
 	// Clean up subscription when component is destroyed
 	onMount(() => {
 		fetchData();
@@ -39,19 +39,21 @@
 
 		window.addEventListener('popstate', checkSelectedCID);
 		document.addEventListener('keydown', handleKeyDown);
-		
+
 		return () => {
 			unsubscribe();
 			window.removeEventListener('popstate', checkSelectedCID);
 			document.removeEventListener('keydown', handleKeyDown);
 		};
 	});
-	
+
 	// Function to change the order of endpoints without reloading data
 	function reorderEndpoints(primaryEndpoint: EndpointConfig) {
-		const otherEndpoints = currentEndpoints.filter((endpoint) => endpoint.url !== primaryEndpoint.url);
+		const otherEndpoints = currentEndpoints.filter(
+			(endpoint) => endpoint.url !== primaryEndpoint.url
+		);
 		const reorderedEndpoints = [primaryEndpoint, ...otherEndpoints];
-		
+
 		// Update the store
 		endpoints.set(reorderedEndpoints);
 	}
@@ -182,14 +184,18 @@
 				<div class="overflow-x-auto ml-4">
 					<h4 class="text-base font-semibold">Authenticated Metadata</h4>
 					<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
-					<h4 class="text-base font-semibold mt-4">Authenticated Relationships</h4>
-					<TableOfMetadata data={authenticatedRelationships} {selectedCID}></TableOfMetadata>
 
-					<!-- Network chart under the tables -->
-					<h4 class="text-base font-semibold mt-4">Relationship Network</h4>
-					<div class="w-full">
-						<NetworkChart {authenticatedRelationships} />
-					</div>
+					<h4 class="text-base font-semibold mt-4">Authenticated Relationships</h4>
+					{#if authenticatedRelationships.length > 0}
+						<TableOfMetadata data={authenticatedRelationships} {selectedCID}></TableOfMetadata>
+
+						<h4 class="text-base font-semibold mt-4">Relationship Network</h4>
+						<div class="w-full">
+							<NetworkChart {authenticatedRelationships} />
+						</div>
+					{:else}
+						<p class="text-sm text-gray-500 ml-2 mb-4">No relationships found for this asset.</p>
+					{/if}
 				</div>
 			{/if}
 		{:else}
