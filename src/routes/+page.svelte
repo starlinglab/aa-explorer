@@ -136,7 +136,7 @@
 						title={cid.toString()}
 						aria-pressed={selectedCID === cid}
 					>
-						<!-- <img src={`https://files.dev.starlinglab.org/${cid}`} alt="" /> -->
+						<img src={`https://files.dev.starlinglab.org/${cid}`} alt="" />
 						{#if cid}
 							<div
 								class="absolute inset-0 flex items-center justify-center
