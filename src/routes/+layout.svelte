@@ -8,5 +8,13 @@
 	let { children } = $props();
 </script>
 
-<SettingsButton />
+<div class="navbar">
+	<div class="logo">
+		<img src="/logo.png" alt="AA Explorer Logo" class="logo-img" />
+		<span>AA Explorer</span>
+	</div>
+	<div class="navbar-right">
+		<SettingsButton />
+	</div>
+</div>
 {@render children()}
