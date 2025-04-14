@@ -34,6 +34,9 @@ const initEndpoints = (): EndpointConfig[] => {
 // Create a writable store for endpoints
 export const endpoints = writable<EndpointConfig[]>(initEndpoints());
 
+// Create a store for the selected CID
+export const selectedCID = writable<string | null>(null);
+
 // Save endpoints to localStorage whenever they change
 endpoints.subscribe((value) => {
 	if (typeof localStorage !== 'undefined') {

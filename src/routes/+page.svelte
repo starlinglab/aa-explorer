@@ -4,7 +4,7 @@
 	import type { EndpointConfig } from '$lib/index';
 	import TableOfMetadata from '../lib/TableOfMetadata.svelte';
 	import NetworkChart from '../lib/NetworkChart.svelte';
-	import { fetchAllCIDs, fetchAllAttestations, shortenCID, endpoints } from '$lib/index';
+	import { fetchAllCIDs, fetchAllAttestations, shortenCID, endpoints, selectedCID as storeCID } from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
 	let selectedCID: string | null = null;
@@ -16,7 +16,7 @@
 	let currentEndpoints: EndpointConfig[] = [];
 
 	// Subscribe to the endpoints store
-	const unsubscribe = endpoints.subscribe((value) => {
+	const unsubscribeEndpoints = endpoints.subscribe((value) => {
 		currentEndpoints = value;
 
 		// Update the isPrimarySource flag for attestations when endpoints change
@@ -32,6 +32,21 @@
 		}
 	});
 
+	// Subscribe to the selectedCID store
+	const unsubscribeSelectedCID = storeCID.subscribe((value) => {
+		if (value !== selectedCID) {
+			if (value === null) {
+				// Clear the selected CID and attestations
+				selectedCID = null;
+				selectedAttestations = [];
+				selectedError = null;
+			} else if (value) {
+				// Load attestations for the new CID
+				loadAttestations(value);
+			}
+		}
+	});
+
 	// Clean up subscription when component is destroyed
 	onMount(() => {
 		fetchData();
@@ -41,7 +56,8 @@
 		document.addEventListener('keydown', handleKeyDown);
 
 		return () => {
-			unsubscribe();
+			unsubscribeEndpoints();
+			unsubscribeSelectedCID();
 			window.removeEventListener('popstate', checkSelectedCID);
 			document.removeEventListener('keydown', handleKeyDown);
 		};
@@ -72,12 +88,21 @@
 		const initialCID = urlParams.get('selectedCID');
 		if (initialCID && initialCID !== selectedCID) {
 			loadAttestations(initialCID);
+		} else if (!initialCID && selectedCID !== null) {
+			// URL has no selectedCID, reset the view
+			selectedCID = null;
+			selectedAttestations = [];
+			selectedError = null;
+			// Also update the store
+			storeCID.set(null);
 		}
 	}
 
 	// When an item is clicked, fetch its attestations.
 	async function loadAttestations(cid: string) {
 		selectedCID = cid;
+		// Update the store
+		storeCID.set(cid);
 		const url = new URL(window.location.href);
 		url.searchParams.set('selectedCID', cid);
 		window.history.pushState({}, '', url);
@@ -98,6 +123,8 @@
 	function handleKeyDown(event: KeyboardEvent) {
 		if (event.key === 'Escape') {
 			selectedCID = null;
+			// Update the store
+			storeCID.set(null);
 		}
 	}
 

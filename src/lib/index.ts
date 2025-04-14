@@ -1,7 +1,7 @@
 import { decode as dagCBORDecode } from '@ipld/dag-cbor';
 import { CID } from 'multiformats/cid';
 import { get } from 'svelte/store';
-import { endpoints } from './stores';
+import { endpoints, selectedCID } from './stores';
 
 // Define a structured endpoint type with name and url
 export interface EndpointConfig {
@@ -9,8 +9,8 @@ export interface EndpointConfig {
   url: string;
 }
 
-// Export the endpoints store for direct use
-export { endpoints };
+// Export the stores for direct use
+export { endpoints, selectedCID };
 
 // Helper: Checks the response and returns its ArrayBuffer.
 async function handleResponse(response: Response): Promise<ArrayBuffer> {
