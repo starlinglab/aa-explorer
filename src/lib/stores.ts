@@ -6,11 +6,11 @@ const defaultEndpoints: EndpointConfig[] = [
 	{
 		name: 'D. Guttenfelder',
 		url: 'https://stanford.aa.dev.starlinglab.org'
+	},
+	{
+		name: 'kira',
+		url: 'https://kira.aa.prod.starlinglab.org'
 	}
-	// {
-	//   name: 'kira',
-	//   url: 'https://kira.aa.prod.starlinglab.org'
-	// }
 ];
 
 // Load endpoints from localStorage on init

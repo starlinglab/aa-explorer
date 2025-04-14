@@ -22,7 +22,7 @@
 <div class="navbar sticky top-0 bg-white shadow-md z-50">
 	<div class="logo" on:click={resetApp} on:keydown={(e) => e.key === 'Enter' && resetApp()}>
 		<img src="/logo.png" alt="AA Explorer Logo" class="logo-img" />
-		<span>AA Explorer</span>
+		<span>Authenticated Attributes Explorer</span>
 	</div>
 	<div class="navbar-right">
 		<SettingsButton />

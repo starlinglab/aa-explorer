@@ -4,7 +4,13 @@
 	import type { EndpointConfig } from '$lib/index';
 	import TableOfMetadata from '../lib/TableOfMetadata.svelte';
 	import NetworkChart from '../lib/NetworkChart.svelte';
-	import { fetchAllCIDs, fetchAllAttestations, shortenCID, endpoints, selectedCID as storeCID } from '$lib/index';
+	import {
+		fetchAllCIDs,
+		fetchAllAttestations,
+		shortenCID,
+		endpoints,
+		selectedCID as storeCID
+	} from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
 	let selectedCID: string | null = null;
@@ -194,7 +200,6 @@
 		{#if selectedCID}
 			<p class="text-sm text-gray-700 mb-2">For CID: {shortenCID(selectedCID)}</p>
 
-			<!-- Data Source Selection with dynamic buttons -->
 			<div class="mb-3 flex flex-wrap gap-2">
 				<span class="text-sm text-gray-700">Primary Source:</span>
 				{#each currentEndpoints as endpoint}
@@ -214,7 +219,7 @@
 			{:else if selectedError}
 				<p class="text-red-500 text-sm">Error: {selectedError}</p>
 			{:else}
-				<div class="w-320 overflow-x-auto ml-4">
+				<div class="w-full overflow-x-auto ml-4">
 					<h4 class="text-base font-semibold">Authenticated Metadata</h4>
 					<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
 
