@@ -26,9 +26,6 @@
 
 <style>
 	.settings-button {
-		position: fixed;
-		top: 1rem;
-		right: 1rem;
 		z-index: 40;
 	}
 </style>
