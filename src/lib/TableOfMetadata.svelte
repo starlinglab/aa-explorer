@@ -32,7 +32,7 @@
 	});
 </script>
 
-<table class="divide-y divide-gray-200">
+<table class="divide-y divide-gray-200 w-full">
 	<thead>
 		<tr>
 			{#each ['', '', 'Attestation', 'Signer'] as header, i}
@@ -87,6 +87,8 @@
 								🔗 {shortenCID(relationship.toString())}
 							</a>
 						{/each}
+					{:else if getKey(attribute) === 'sha256' || getKey(attribute) === 'blake3'}
+						{shortenCID(getAttribute(attribute))}
 					{:else}
 						{getAttribute(attribute)}
 					{/if}

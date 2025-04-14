@@ -40,11 +40,13 @@ export interface Relationship {
 	witness?: CID[];
 }
 
-export type IndividualAttestation = { 
-	key: string; 
-	value: AttestationValue; 
+export type IndividualAttestation = {
+	key: string;
+	value: AttestationValue;
 	sourceEndpoint?: string;
 	sourceName?: string;
 	isPrimarySource?: boolean;
+	blake3?: string;
+	sha256?: string;
 };
 export type ListOfAttestations = IndividualAttestation[];
