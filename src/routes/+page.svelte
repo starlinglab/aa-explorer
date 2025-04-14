@@ -151,11 +151,15 @@
 		{/if}
 	</div>
 
-	<div class="w-80 p-3 border-l border-gray-300">
+	<div class="w-160 p-3 border-l border-gray-300">
 		{#if selectedCID}
 			<div class="flex">
 				<div class="w-full p-1">
-					<img src={`https://files.dev.starlinglab.org/${selectedCID}`} alt="" class="max-w-full" />
+					<img
+						src={`https://files.dev.starlinglab.org/${selectedCID}`}
+						alt=""
+						class="h-80 object-contain mx-auto"
+					/>
 				</div>
 			</div>
 		{/if}
@@ -177,13 +181,13 @@
 			</div>
 
 			{#if isLoading}
-				<div class="w-80">
+				<div class="w-320">
 					<p class="text-sm text-gray-500">Loading attestations...</p>
 				</div>
 			{:else if selectedError}
 				<p class="text-red-500 text-sm">Error: {selectedError}</p>
 			{:else}
-				<div class="w-80 overflow-x-auto ml-4">
+				<div class="w-320 overflow-x-auto ml-4">
 					<h4 class="text-base font-semibold">Authenticated Metadata</h4>
 					<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
 
@@ -201,7 +205,9 @@
 				</div>
 			{/if}
 		{:else}
-			<p class="text-sm text-gray-500">Click an item to view its attestations.</p>
+			<div class="w-160">
+				<p class="text-sm text-gray-500">Click an item to view its attestations.</p>
+			</div>
 		{/if}
 	</div>
 </div>
