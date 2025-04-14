@@ -118,7 +118,7 @@
 </script>
 
 <div class="flex h-screen">
-	<div class="flex-2/3 p-4 overflow-auto">
+	<div class="flex-grow p-4 overflow-auto">
 		{#if data.error}
 			<p class="text-red-500">Error: {data.error}</p>
 		{:else if !data.cids || data.cids.length === 0}
@@ -151,7 +151,7 @@
 		{/if}
 	</div>
 
-	<div class="flex-1/3 p-3 border-l border-gray-300">
+	<div class="w-80 p-3 border-l border-gray-300">
 		{#if selectedCID}
 			<div class="flex">
 				<div class="w-full p-1">
@@ -177,11 +177,13 @@
 			</div>
 
 			{#if isLoading}
-				<p class="text-sm text-gray-500">Loading attestations...</p>
+				<div class="w-80">
+					<p class="text-sm text-gray-500">Loading attestations...</p>
+				</div>
 			{:else if selectedError}
 				<p class="text-red-500 text-sm">Error: {selectedError}</p>
 			{:else}
-				<div class="overflow-x-auto ml-4">
+				<div class="w-80 overflow-x-auto ml-4">
 					<h4 class="text-base font-semibold">Authenticated Metadata</h4>
 					<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
 
