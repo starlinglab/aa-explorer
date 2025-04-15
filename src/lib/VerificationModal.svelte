@@ -77,6 +77,8 @@
 					class={`${
 						verificationResult.status === 'verified'
 							? 'bg-green-100 border border-green-400 text-green-700'
+							: verificationResult.status === 'cached' && verificationResult.cachedValue
+								? 'bg-green-100 border border-green-400 text-green-700 opacity-90'
 							: verificationResult.status === 'unknown_key'
 								? 'bg-orange-100 border border-orange-400 text-orange-700'
 								: verificationResult.status === 'present'
@@ -100,6 +102,36 @@
 							<p class="mt-2 text-sm">
 								The timestamp proof is valid and anchored in the Bitcoin blockchain.
 							</p>
+						{/if}
+					{:else if verificationResult.status === 'cached'}
+						{#if verificationResult.cachedValue}
+							<div class="flex items-center">
+								<CheckmarkIcon class="w-6 h-6 text-green-500 mr-2 opacity-90" />
+								<span>Verification successful! (cached result)</span>
+							</div>
+							
+							{#if kind === 'timestamp'}
+								<p class="mt-2 text-sm">
+									The timestamp proof was recently verified and is valid. Using cached result to reduce blockchain queries.
+								</p>
+								<p class="mt-2 text-xs text-gray-600">
+									Note: Cache expires after 5 minutes. Results from a fresh verification will be shown then.
+								</p>
+							{/if}
+						{:else}
+							<div class="flex items-center">
+								<QuestionIcon class="w-6 h-6 text-red-500 mr-2 opacity-90" />
+								<span>Verification failed! (cached result)</span>
+							</div>
+							
+							{#if kind === 'timestamp'}
+								<p class="mt-2 text-sm">
+									The timestamp was recently checked and couldn't be verified. Using cached result to reduce blockchain queries.
+								</p>
+								<p class="mt-2 text-xs text-gray-600">
+									Note: Cache expires after 5 minutes. Results from a fresh verification will be shown then.
+								</p>
+							{/if}
 						{/if}
 					{:else if verificationResult.status === 'unknown_key'}
 						<div class="flex items-center">
@@ -179,6 +211,9 @@
 					<div class="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto">
 						<p>Timestamp Message: {data.value.timestamp.ots.msg.toString()}</p>
 						<p>Upgraded: {data.value.timestamp.ots.upgraded ? 'Yes' : 'No'}</p>
+						{#if verificationResult && verificationResult.status === 'cached' && verificationResult.cacheTimestamp}
+							<p class="text-gray-600">Cached: {verificationResult.cacheTimestamp.toLocaleString()}</p>
+						{/if}
 					</div>
 				</div>
 			{/if}
