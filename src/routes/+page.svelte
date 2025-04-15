@@ -169,7 +169,7 @@
 						title={cid.toString()}
 						aria-pressed={selectedCID === cid}
 					>
-						<img src={`https://files.dev.starlinglab.org/${cid}`} alt="" />
+						<img src={`https://files.dev.starlinglab.org/${cid}-thumb`} alt="" />
 						{#if cid}
 							<div
 								class="absolute inset-0 flex items-center justify-center
@@ -189,10 +189,20 @@
 			<div class="flex">
 				<div class="w-full p-1">
 					<img
-						src={`https://files.dev.starlinglab.org/${selectedCID}`}
+						src={`https://files.dev.starlinglab.org/${selectedCID}-thumb`}
 						alt=""
 						class="h-80 object-contain mx-auto"
 					/>
+					<p class="text-xs text-gray-500 text-center mt-1">
+						This is an optimised preview of the asset. <br />
+						<a
+							href={`https://files.dev.starlinglab.org/${selectedCID}`}
+							download
+							class="text-blue-500 underline hover:text-blue-700"
+						>
+							Click here
+						</a> to download the original.
+					</p>
 				</div>
 			</div>
 		{/if}
