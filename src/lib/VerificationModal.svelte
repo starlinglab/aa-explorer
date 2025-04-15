@@ -1,6 +1,5 @@
 <script lang="ts">
 	import Modal from './Modal.svelte';
-	import type { IndividualAttestation } from './types';
 	import { verifyData, type VerificationResult } from './verification';
 	import { verificationModalStore, hideVerificationModal } from './stores';
 

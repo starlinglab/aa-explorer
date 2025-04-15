@@ -1,12 +1,14 @@
 <script lang="ts">
+	import { CopyIcon, CheckmarkIcon } from './icons';
+
 	export let textToCopy: string;
 	export let shortText: string | null = null;
 	export let label: string = 'Copy to clipboard';
 	export let showFullText: boolean = true;
 	export let displayStyle: 'icon' | 'text' | 'both' = 'both';
-	
+
 	let hasCopied: boolean = false;
-	
+
 	function copyToClipboard() {
 		if (textToCopy) {
 			navigator.clipboard.writeText(textToCopy);
@@ -30,13 +32,18 @@
 	title={label}
 >
 	{#if hasCopied}
-		<span>✅ Copied!</span>
+		<span class="inline-flex items-center gap-1">
+			<CheckmarkIcon class="w-4 h-4 text-green-500" />
+			<span>Copied!</span>
+		</span>
 	{:else}
 		{#if displayStyle === 'icon' || displayStyle === 'both'}
-			<span class="mr-1">📋</span>
+			<span class="mr-1 inline-flex items-center">
+				<CopyIcon class="w-4 h-4" />
+			</span>
 		{/if}
 		{#if displayStyle === 'text' || displayStyle === 'both'}
-			<span class="text-xs">{showFullText ? '(click to copy full text)' : 'Copy'}</span>
+			<span class="text-xs">{showFullText ? 'Click to copy' : 'Copy'}</span>
 		{/if}
 	{/if}
 </button>

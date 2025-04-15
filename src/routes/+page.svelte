@@ -12,6 +12,7 @@
 		selectedCID as storeCID,
 		CopyButton
 	} from '$lib/index';
+	import { DownloadIcon } from '$lib/icons';
 
 	let data: { cids?: Array<string>; error?: string } = {};
 	let selectedCID: string | null = null;
@@ -195,23 +196,26 @@
 						alt=""
 						class="h-80 object-contain mx-auto"
 					/>
-					<p class="text-xs text-gray-500 text-center mt-1">
-						This is an optimised preview of the asset. <a
-							href={`https://files.dev.starlinglab.org/${selectedCID}`}
-							download
-							class="text-blue-500 hover:underline"
-							title="Download original file"
-						>
-							📥 Click here to download the original file.
-						</a>
-					</p>
-					<p class="text-xs text-gray-500 text-center mb-2">
+					<p class="text-xs text-gray-500 mt-1">This is an optimised preview of the asset.</p>
+					<p class="text-xs text-gray-500 mb-2">
 						Hash: <code>{shortenCID(selectedCID)}</code>
 						<CopyButton
 							textToCopy={selectedCID}
 							label="Copy CID to clipboard"
-							showFullText={true}
-						/>
+							showFullText={false}
+							displayStyle="icon"
+						/> |
+						<a
+							href={`https://files.dev.starlinglab.org/${selectedCID}`}
+							download
+							class="text-blue-500 hover:underline inline-flex align-text-bottom"
+							title="Download original file"
+						>
+							<span class="inline-flex gap-1">
+								<DownloadIcon class="w-4 h-4" />
+								<span>Download original file</span>
+							</span>
+						</a>
 					</p>
 				</div>
 			</div>
@@ -229,7 +233,7 @@
 					<h3 class="text-base font-semibold">Authenticated Metadata</h3>
 					<p class="text-sm text-gray-700">
 						The following metadata might come from the following sources, and in this order.<br />
-						Click on a source to select is as primary. Head to the ⚙️ Settings menu to add sources.
+						Click on a source to select it as primary. Head to the Settings menu to add sources.
 					</p>
 					<div class="mb-3 flex flex-wrap gap-2">
 						{#each currentEndpoints as endpoint}
