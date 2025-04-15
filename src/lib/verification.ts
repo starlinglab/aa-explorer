@@ -9,7 +9,7 @@ const knownPubkeys: Array<Uint8Array> = [];
 
 // Define a new result type for more nuanced verification outcomes
 export type VerificationResult = {
-	status: 'verified' | 'unverified' | 'present'; // verified = success, unverified = failure, present = partial
+	status: 'verified' | 'unverified' | 'present' | 'unknown_key';
 };
 
 export async function verifyData(
@@ -27,10 +27,15 @@ export async function verifyData(
 			// For signature, check if signature is present first
 			if (data.value.signature) {
 				// If signature exists, verify it
-				const isValid = await verifySignature(data.value);
-				return {
-					status: isValid ? 'verified' : 'present' // 'present' means signature exists but doesn't verify
-				};
+				const { valid, knownKey } = await verifySignature(data.value);
+
+				if (valid && knownKey) {
+					return { status: 'verified' };
+				} else if (valid && !knownKey) {
+					return { status: 'unknown_key' };
+				} else {
+					return { status: 'present' };
+				}
 			}
 			return { status: 'unverified' }; // No signature at all
 		case 'timestamp':
@@ -54,19 +59,30 @@ export async function verifyData(
 	}
 }
 
-export const verifySignature = async (av: AttestationValue): Promise<boolean> => {
-	if (!knownPubkeys.includes(av.signature.pubKey)) {
-		return false;
-	}
+export const verifySignature = async (
+	av: AttestationValue
+): Promise<{ valid: boolean; knownKey: boolean }> => {
+	const isKnownKey = knownPubkeys.includes(av.signature.pubKey);
+
+	// First check if the CID matches the message
 	const attBlock = await block.encode({
 		value: av.attestation,
 		codec: dagCbor,
 		hasher: sha256
 	});
 	if (!attBlock.cid.equals(av.signature.msg)) {
-		return false;
+		// CID mismatch means invalid signature
+		return { valid: false, knownKey: isKnownKey };
 	}
-	return await ed.verifyAsync(av.signature.sig, av.signature.msg.bytes, av.signature.pubKey);
+
+	// Verify the signature cryptographically
+	const isValid = await ed.verifyAsync(
+		av.signature.sig,
+		av.signature.msg.bytes,
+		av.signature.pubKey
+	);
+
+	return { valid: isValid, knownKey: isKnownKey };
 };
 
 export const verifyTimestamp = async (av: AttestationValue): Promise<boolean> => {

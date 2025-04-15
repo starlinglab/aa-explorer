@@ -25,16 +25,30 @@
 		<button style="cursor: pointer;" on:click={handleClick} title="{kind}: Verified OK">
 			<CheckmarkIcon class="w-5 h-5 text-green-500" />
 		</button>
+	{:else if result.status === 'unknown_key'}
+		<button
+			style="cursor: pointer;"
+			on:click={handleClick}
+			title="Signature verifies but is from an unknown public key"
+		>
+			<QuestionIcon class="w-5 h-5 text-orange-300" />
+		</button>
 	{:else if result.status === 'present'}
 		<button
 			style="cursor: pointer;"
 			on:click={handleClick}
-			title="{kind === 'signature' ? 'Signature' : 'Timestamp'} present but doesn't verify"
+			title={kind === 'signature'
+				? "Signature exists but doesn't verify cryptographically"
+				: "Timestamp present but doesn't verify"}
 		>
 			<QuestionIcon class="w-5 h-5 text-orange-300" />
 		</button>
 	{:else}
-		<button style="cursor: pointer;" on:click={handleClick} title="{kind}: Verification failed">
+		<button
+			style="cursor: pointer;"
+			on:click={handleClick}
+			title={kind === 'signature' ? 'No signature found' : kind + ': Verification failed'}
+		>
 			<CrossIcon class="w-5 h-5 text-red-500" />
 		</button>
 	{/if}

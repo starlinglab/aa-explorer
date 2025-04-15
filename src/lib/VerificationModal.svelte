@@ -2,6 +2,7 @@
 	import Modal from './Modal.svelte';
 	import { verifyData, type VerificationResult } from './verification';
 	import { verificationModalStore, hideVerificationModal } from './stores';
+	import { CheckmarkIcon, QuestionIcon, CrossIcon } from './icons';
 
 	// Local reactive variables
 	let verificationResult: VerificationResult | null = null;
@@ -76,14 +77,16 @@
 					class={`${
 						verificationResult.status === 'verified'
 							? 'bg-green-100 border border-green-400 text-green-700'
-							: verificationResult.status === 'present'
+							: verificationResult.status === 'unknown_key'
 								? 'bg-orange-100 border border-orange-400 text-orange-700'
-								: 'bg-red-100 border border-red-400 text-red-700'
+								: verificationResult.status === 'present'
+									? 'bg-orange-100 border border-red-400 text-red-700'
+									: 'bg-red-100 border border-red-400 text-red-700'
 					} px-4 py-3 rounded relative`}
 				>
 					{#if verificationResult.status === 'verified'}
 						<div class="flex items-center">
-							<span class="text-xl mr-2">🟢</span>
+							<CheckmarkIcon class="w-6 h-6 text-green-500 mr-2" />
 							<span>Verification successful!</span>
 						</div>
 
@@ -98,20 +101,32 @@
 								The timestamp proof is valid and anchored in the Bitcoin blockchain.
 							</p>
 						{/if}
+					{:else if verificationResult.status === 'unknown_key'}
+						<div class="flex items-center">
+							<QuestionIcon class="w-6 h-6 text-orange-500 mr-2" />
+							<span>Signature verifies but is from an unknown public key</span>
+						</div>
+
+						<p class="mt-2 text-sm">
+							The signature is valid but was created with an unknown public key.
+						</p>
 					{:else if verificationResult.status === 'present'}
 						<div class="flex items-center">
-							<span class="text-xl mr-2">🟠</span>
-							<span
-								>{kind === 'signature' ? 'Signature' : 'Timestamp'} present but doesn't verify!</span
-							>
+							<QuestionIcon class="w-6 h-6 text-red-500 mr-2" />
+							<span>
+								{#if kind === 'signature'}
+									Signature exists but doesn't verify cryptographically
+								{:else}
+									Timestamp present but doesn't verify
+								{/if}
+							</span>
 						</div>
 
 						{#if kind === 'signature'}
 							<p class="mt-2 text-sm">
-								The signature exists but could not be verified. This could be due to:
+								The signature exists but failed cryptographic verification. This could be due to:
 							</p>
 							<ul class="list-disc pl-5 mt-1">
-								<li>The signature was created with an unknown public key</li>
 								<li>The signature is invalid or has been tampered with</li>
 								<li>The data was modified after signing</li>
 							</ul>
@@ -119,7 +134,7 @@
 							<p class="mt-2 text-sm">
 								The timestamp exists but could not be verified. This could be due to:
 							</p>
-							<ul class="list-disc pl-5 mt-1">
+							<ul class="list-disc text-sm pl-5 mt-1">
 								<li>The timestamp proof isn't properly formatted</li>
 								<li>The timestamp hasn't been anchored in the blockchain yet</li>
 								<li>The data was modified after timestamping</li>
@@ -127,7 +142,7 @@
 						{/if}
 					{:else}
 						<div class="flex items-center">
-							<span class="text-xl mr-2">🔴</span>
+							<CrossIcon class="w-6 h-6 text-red-500 mr-2" />
 							<span>Verification failed!</span>
 						</div>
 
