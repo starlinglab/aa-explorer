@@ -9,7 +9,8 @@
 		fetchAllAttestations,
 		shortenCID,
 		endpoints,
-		selectedCID as storeCID
+		selectedCID as storeCID,
+		CopyButton
 	} from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
@@ -206,27 +207,11 @@
 					</p>
 					<p class="text-xs text-gray-500 text-center mb-2">
 						Hash: <code>{shortenCID(selectedCID)}</code>
-						<button
-							type="button"
-							class="cursor-pointer text-blue-500 hover:underline ml-2"
-							on:click={() => {
-								if (selectedCID) {
-									navigator.clipboard.writeText(selectedCID);
-								}
-								hasCopiedCID = true;
-								setTimeout(() => {
-									hasCopiedCID = false;
-								}, 3000);
-							}}
-							aria-label="Copy CID to clipboard"
-							title="Copy to clipboard"
-						>
-							{#if hasCopiedCID}
-								✅ Copied!
-							{:else}
-								📋 (click to copy full CID)
-							{/if}
-						</button>
+						<CopyButton 
+							textToCopy={selectedCID} 
+							label="Copy CID to clipboard"
+							showFullText={true}
+						/>
 					</p>
 				</div>
 			</div>
@@ -234,11 +219,12 @@
 		<hr class="gray-200 mt-2 mb-2" />
 		<h2 class="text-lg font-bold mb-1 mt-1">Metadata about this asset:</h2>
 		{#if selectedCID}
-			<p class="text-sm text-gray-700">
-				The following metadata might come from the following sources, and in this order.<br />
-				Click on a source to select is as primary. Head to the ⚙️ Settings menu to add sources.
+			<p class="text-sm text-gray-700 mb-2">
+				For CID: {shortenCID(selectedCID)}
 			</p>
-			<div class="mt-1 mb-3 flex flex-wrap gap-2">
+
+			<div class="mb-3 flex flex-wrap gap-2">
+				<span class="text-sm text-gray-700">Primary Source:</span>
 				{#each currentEndpoints as endpoint}
 					<button
 						class={`text-xs px-2 py-1 rounded ${currentEndpoints[0]?.url === endpoint.url ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
@@ -256,9 +242,8 @@
 			{:else if selectedError}
 				<p class="text-red-500 text-sm">Error: {selectedError}</p>
 			{:else}
-				<div class="w-full overflow-x-auto">
+				<div class="w-full overflow-x-auto ml-4">
 					<h4 class="text-base font-semibold">Authenticated Metadata</h4>
-					<p class="text-sm">Legend: (H)ash, (S)ignature, (T)imestamp</p>
 					<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
 
 					<h4 class="text-base font-semibold mt-4">Authenticated Relationships</h4>

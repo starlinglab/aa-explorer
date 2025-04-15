@@ -95,6 +95,9 @@ export const uint8ArrayToHex = (arr: Uint8Array): string => {
 		.join('');
 };
 
+// Export components for use in other files
+export { default as CopyButton } from './CopyButton.svelte';
+
 /**
  * Navigate to a CID by updating the URL parameters and triggering a popstate event.
  * Used for in-app navigation between CIDs.

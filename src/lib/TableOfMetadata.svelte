@@ -1,6 +1,6 @@
 <script lang="ts">
 	import VerifyButton from './VerifyButton.svelte';
-	import { uint8ArrayToHex, shortenCID, navigateToCID } from '$lib/index';
+	import { uint8ArrayToHex, shortenCID, navigateToCID, CopyButton } from '$lib/index';
 	import { CID } from 'multiformats/cid';
 	import type {
 		ListOfAttestations,
@@ -88,7 +88,13 @@
 							</a>
 						{/each}
 					{:else if getKey(attribute) === 'sha256' || getKey(attribute) === 'blake3'}
-						{shortenCID(getAttribute(attribute))}
+						<span class="font-mono">{shortenCID(String(getAttribute(attribute)))}</span>
+						<CopyButton 
+							textToCopy={String(getAttribute(attribute))} 
+							label="Copy {getKey(attribute)} hash"
+							showFullText={false}
+							displayStyle="icon"
+						/>
 					{:else}
 						{getAttribute(attribute)}
 					{/if}
