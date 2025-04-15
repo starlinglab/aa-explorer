@@ -17,6 +17,7 @@
 	let selectedAttestations: ListOfAttestations = [];
 	let selectedError: string | null = null;
 	let isLoading: boolean = false;
+	let hasCopiedCID: boolean = false;
 
 	// Store current endpoints state
 	let currentEndpoints: EndpointConfig[] = [];
@@ -194,21 +195,38 @@
 						class="h-80 object-contain mx-auto"
 					/>
 					<p class="text-xs text-gray-500 text-center mt-1">
-						This is an optimised preview of the asset. <br />
-						<a
-							href={`https://files.dev.starlinglab.org/${selectedCID}`}
-							download
-							class="text-blue-500 underline hover:text-blue-700"
-						>
-							Click here
-						</a> to download the original.
+						This is an optimised preview of the asset. Click this button to download the original.
 					</p>
 				</div>
 			</div>
 		{/if}
-		<h2 class="text-lg font-bold mb-1">Attestations</h2>
+		<hr class="gray-200" />
+		<h2 class="text-lg font-bold mb-1 mt-1">Metadata about this asset:</h2>
 		{#if selectedCID}
-			<p class="text-sm text-gray-700 mb-2">For CID: {shortenCID(selectedCID)}</p>
+			<p class="text-sm text-gray-700 mb-2">
+				CID/hash: {shortenCID(selectedCID)}
+				<button
+					type="button"
+					class="cursor-pointer text-blue-500 hover:underline ml-2"
+					on:click={() => {
+						if (selectedCID) {
+							navigator.clipboard.writeText(selectedCID);
+						}
+						hasCopiedCID = true;
+						setTimeout(() => {
+							hasCopiedCID = false;
+						}, 3000);
+					}}
+					aria-label="Copy CID to clipboard"
+					title="Copy to clipboard"
+				>
+					{#if hasCopiedCID}
+						✅ Copied!
+					{:else}
+						📋 (click to copy full CID)
+					{/if}
+				</button>
+			</p>
 
 			<div class="mb-3 flex flex-wrap gap-2">
 				<span class="text-sm text-gray-700">Primary Source:</span>
