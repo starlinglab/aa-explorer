@@ -1,14 +1,14 @@
 <script lang="ts">
 	import Modal from './Modal.svelte';
 	import type { IndividualAttestation } from './types';
-	import { verifyData } from './verification';
+	import { verifyData, type VerificationResult } from './verification';
 
 	export let showModal: boolean = false;
 	export let kind: 'hash' | 'signature' | 'timestamp';
 	export let data: IndividualAttestation;
 	export let selectedCID: string | null = null;
 
-	let verificationResult: boolean | null = null;
+	let verificationResult: VerificationResult | null = null;
 	let isLoading = true;
 	let errorMessage: string | null = null;
 
@@ -60,13 +60,19 @@
 				<strong class="font-bold">Error:</strong>
 				<span class="block sm:inline"> {errorMessage}</span>
 			</div>
-		{:else}
+		{:else if verificationResult}
 			<div
-				class={`${verificationResult ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700'} px-4 py-3 rounded relative`}
+				class={`${
+					verificationResult.status === 'verified'
+						? 'bg-green-100 border border-green-400 text-green-700'
+						: verificationResult.status === 'present'
+						? 'bg-orange-100 border border-orange-400 text-orange-700'
+						: 'bg-red-100 border border-red-400 text-red-700'
+				} px-4 py-3 rounded relative`}
 			>
-				{#if verificationResult}
+				{#if verificationResult.status === 'verified'}
 					<div class="flex items-center">
-						<span class="text-xl mr-2">✅</span>
+						<span class="text-xl mr-2">🟢</span>
 						<span>Verification successful!</span>
 					</div>
 
@@ -81,9 +87,34 @@
 							The timestamp proof is valid and anchored in the Bitcoin blockchain.
 						</p>
 					{/if}
+				{:else if verificationResult.status === 'present'}
+					<div class="flex items-center">
+						<span class="text-xl mr-2">🟠</span>
+						<span>{kind === 'signature' ? 'Signature' : 'Timestamp'} present but doesn't verify!</span>
+					</div>
+
+					{#if kind === 'signature'}
+						<p class="mt-2 text-sm">
+							The signature exists but could not be verified. This could be due to:
+						</p>
+						<ul class="list-disc pl-5 mt-1">
+							<li>The signature was created with an unknown public key</li>
+							<li>The signature is invalid or has been tampered with</li>
+							<li>The data was modified after signing</li>
+						</ul>
+					{:else if kind === 'timestamp'}
+						<p class="mt-2 text-sm">
+							The timestamp exists but could not be verified. This could be due to:
+						</p>
+						<ul class="list-disc pl-5 mt-1">
+							<li>The timestamp proof isn't properly formatted</li>
+							<li>The timestamp hasn't been anchored in the blockchain yet</li>
+							<li>The data was modified after timestamping</li>
+						</ul>
+					{/if}
 				{:else}
 					<div class="flex items-center">
-						<span class="text-xl mr-2">❌</span>
+						<span class="text-xl mr-2">🔴</span>
 						<span>Verification failed!</span>
 					</div>
 
@@ -91,12 +122,11 @@
 						<p class="mt-2 text-sm">The attestation CID does not match the selected CID.</p>
 					{:else if kind === 'signature'}
 						<p class="mt-2 text-sm">
-							The signature could not be verified. This could be due to an invalid signature or an
-							unknown public key.
+							No signature was found for this attestation.
 						</p>
 					{:else if kind === 'timestamp'}
 						<p class="mt-2 text-sm">
-							The timestamp proof could not be verified against the Bitcoin blockchain.
+							No timestamp was found for this attestation.
 						</p>
 					{/if}
 				{/if}

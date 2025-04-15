@@ -7,25 +7,50 @@ import type { AttestationValue, IndividualAttestation } from './types';
 // Known public keys array - should be moved to a global store
 const knownPubkeys: Array<Uint8Array> = [];
 
+// Define a new result type for more nuanced verification outcomes
+export type VerificationResult = {
+	status: 'verified' | 'unverified' | 'present'; // verified = success, unverified = failure, present = partial
+};
+
 export async function verifyData(
 	kind: 'hash' | 'signature' | 'timestamp',
 	data: IndividualAttestation,
 	selectedCID: string | null
-): Promise<boolean> {
+): Promise<VerificationResult> {
 	switch (kind) {
 		case 'hash':
 			// compare data.value.attestation.CID to on-demand computed CID of the attestation
-			return data.value.attestation.CID.toString() === selectedCID;
+			return {
+				status: data.value.attestation.CID.toString() === selectedCID ? 'verified' : 'unverified'
+			};
 		case 'signature':
-			// verify validity of data.value.signature
-			return await verifySignature(data.value);
+			// For signature, check if signature is present first
+			if (data.value.signature) {
+				// If signature exists, verify it
+				const isValid = await verifySignature(data.value);
+				return {
+					status: isValid ? 'verified' : 'present' // 'present' means signature exists but doesn't verify
+				};
+			}
+			return { status: 'unverified' }; // No signature at all
 		case 'timestamp':
-			// verify timestamp
-			// return await verifyTimestamp(data.value);
-			return true;
+			// For timestamp, check if timestamp is present first
+			if (data.value.timestamp && data.value.timestamp.ots) {
+				// If timestamp exists, verify it
+				try {
+					const isTimestampValid = await verifyTimestamp(data.value);
+					return {
+						status: isTimestampValid ? 'verified' : 'present' // 'present' means timestamp exists but doesn't verify
+					};
+				} catch (error) {
+					console.log('Error verifying timestamp:', error);
+					return { status: 'present' }; // Error during verification but timestamp exists
+				}
+			}
+			return { status: 'unverified' }; // No timestamp at all
 		default:
 			console.log('Unknown kind:', kind);
-			return false;
+			return { status: 'unverified' };
 	}
 }
 
