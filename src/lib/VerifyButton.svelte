@@ -1,13 +1,11 @@
 <script lang="ts">
 	import type { IndividualAttestation } from './types';
 	import { verifyData, type VerificationResult } from './verification';
-	import VerificationModal from './VerificationModal.svelte';
+	import { showVerificationModal } from './stores';
 
 	export let kind: 'hash' | 'signature' | 'timestamp';
 	export let data: IndividualAttestation;
 	export let selectedCID: string | null = null;
-
-	let showModal = false;
 
 	async function checkVerification(): Promise<VerificationResult> {
 		return await verifyData(kind, data, selectedCID);
@@ -15,16 +13,9 @@
 
 	function handleClick(event: MouseEvent) {
 		event.stopPropagation();
-		showModal = true;
+		showVerificationModal(kind, data, selectedCID);
 	}
 </script>
-
-<VerificationModal
-	bind:showModal
-	{kind}
-	{data}
-	{selectedCID}
-/>
 
 {#await checkVerification()}
 	Loading...

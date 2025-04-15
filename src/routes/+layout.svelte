@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import SettingsButton from '$lib/SettingsButton.svelte';
+	import VerificationModal from '$lib/VerificationModal.svelte';
 	// With the new store approach, endpoints are loaded automatically
 	// so we don't need to call loadEndpointsFromStorage anymore
 	import { endpoints, selectedCID } from '$lib/index';
@@ -28,4 +29,9 @@
 		<SettingsButton />
 	</div>
 </div>
+
 {@render children()}
+
+<div class="modal-container">
+	<VerificationModal />
+</div>

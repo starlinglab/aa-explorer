@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import type { EndpointConfig } from './index';
+import type { IndividualAttestation } from './types';
 
 // Initial endpoint configs
 const defaultEndpoints: EndpointConfig[] = [
@@ -47,3 +48,37 @@ endpoints.subscribe((value) => {
 		localStorage.setItem('aa-explorer-endpoints', JSON.stringify(value));
 	}
 });
+
+// Store for managing verification modals
+export type VerificationModalData = {
+    show: boolean;
+    kind: 'hash' | 'signature' | 'timestamp';
+    data: IndividualAttestation | null;
+    selectedCID: string | null;
+};
+
+// Default state
+const defaultVerificationModal: VerificationModalData = {
+    show: false,
+    kind: 'hash',
+    data: null,
+    selectedCID: null
+};
+
+// Create store
+export const verificationModalStore = writable<VerificationModalData>(defaultVerificationModal);
+
+// Helper functions
+export function showVerificationModal(kind: 'hash' | 'signature' | 'timestamp', data: IndividualAttestation, selectedCID: string | null) {
+    verificationModalStore.set({
+        show: true,
+        kind,
+        data,
+        selectedCID
+    });
+}
+
+export function hideVerificationModal() {
+    // Only set show to false and keep the other data intact
+    verificationModalStore.update(state => ({...state, show: false}));
+}

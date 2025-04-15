@@ -1,9 +1,12 @@
 <script lang="ts">
 	export let showModal: boolean;
 	export let title: string = '';
+	import { createEventDispatcher } from 'svelte';
+	const dispatch = createEventDispatcher();
 
 	function closeModal() {
 		showModal = false;
+		dispatch('close');
 	}
 
 	function handleKeydown(e: KeyboardEvent) {

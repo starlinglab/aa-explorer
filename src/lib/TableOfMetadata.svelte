@@ -89,8 +89,8 @@
 						{/each}
 					{:else if getKey(attribute) === 'sha256' || getKey(attribute) === 'blake3'}
 						<span class="font-mono">{shortenCID(String(getAttribute(attribute)))}</span>
-						<CopyButton 
-							textToCopy={String(getAttribute(attribute))} 
+						<CopyButton
+							textToCopy={String(getAttribute(attribute))}
 							label="Copy {getKey(attribute)} hash"
 							showFullText={false}
 							displayStyle="icon"
