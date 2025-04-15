@@ -9,7 +9,8 @@
 		fetchAllAttestations,
 		shortenCID,
 		endpoints,
-		selectedCID as storeCID
+		selectedCID as storeCID,
+		CopyButton
 	} from '$lib/index';
 
 	let data: { cids?: Array<string>; error?: string } = {};
@@ -195,51 +196,28 @@
 						class="h-80 object-contain mx-auto"
 					/>
 					<p class="text-xs text-gray-500 text-center mt-1">
-						This is an optimised preview of the asset. Click this button to download the original.
+						This is an optimised preview of the asset. <a
+							href={`https://files.dev.starlinglab.org/${selectedCID}`}
+							download
+							class="text-blue-500 hover:underline"
+							title="Download original file"
+						>
+							📥 Click here to download the original file.
+						</a>
+					</p>
+					<p class="text-xs text-gray-500 text-center mb-2">
+						Hash: <code>{shortenCID(selectedCID)}</code>
+						<CopyButton
+							textToCopy={selectedCID}
+							label="Copy CID to clipboard"
+							showFullText={true}
+						/>
 					</p>
 				</div>
 			</div>
 		{/if}
-		<hr class="gray-200" />
-		<h2 class="text-lg font-bold mb-1 mt-1">Metadata about this asset:</h2>
+		<hr class="gray-200 mt-2 mb-2" />
 		{#if selectedCID}
-			<p class="text-sm text-gray-700 mb-2">
-				CID/hash: {shortenCID(selectedCID)}
-				<button
-					type="button"
-					class="cursor-pointer text-blue-500 hover:underline ml-2"
-					on:click={() => {
-						if (selectedCID) {
-							navigator.clipboard.writeText(selectedCID);
-						}
-						hasCopiedCID = true;
-						setTimeout(() => {
-							hasCopiedCID = false;
-						}, 3000);
-					}}
-					aria-label="Copy CID to clipboard"
-					title="Copy to clipboard"
-				>
-					{#if hasCopiedCID}
-						✅ Copied!
-					{:else}
-						📋 (click to copy full CID)
-					{/if}
-				</button>
-			</p>
-
-			<div class="mb-3 flex flex-wrap gap-2">
-				<span class="text-sm text-gray-700">Primary Source:</span>
-				{#each currentEndpoints as endpoint}
-					<button
-						class={`text-xs px-2 py-1 rounded ${currentEndpoints[0]?.url === endpoint.url ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-						on:click={() => reorderEndpoints(endpoint)}
-					>
-						{endpoint.name}
-					</button>
-				{/each}
-			</div>
-
 			{#if isLoading}
 				<div class="w-320">
 					<p class="text-sm text-gray-500">Loading attestations...</p>
@@ -247,8 +225,23 @@
 			{:else if selectedError}
 				<p class="text-red-500 text-sm">Error: {selectedError}</p>
 			{:else}
-				<div class="w-full overflow-x-auto ml-4">
-					<h4 class="text-base font-semibold">Authenticated Metadata</h4>
+				<div class="w-full overflow-x-auto">
+					<h3 class="text-base font-semibold">Authenticated Metadata</h3>
+					<p class="text-sm text-gray-700">
+						The following metadata might come from the following sources, and in this order.<br />
+						Click on a source to select is as primary. Head to the ⚙️ Settings menu to add sources.
+					</p>
+					<div class="mb-3 flex flex-wrap gap-2">
+						{#each currentEndpoints as endpoint}
+							<button
+								class={`text-xs px-2 py-1 rounded ${currentEndpoints[0]?.url === endpoint.url ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+								on:click={() => reorderEndpoints(endpoint)}
+							>
+								{endpoint.name}
+							</button>
+						{/each}
+					</div>
+					<p class="text-xs text-gray-500">Legend: (H)ash, (S)ignature, (T)imestamp</p>
 					<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
 
 					<h4 class="text-base font-semibold mt-4">Authenticated Relationships</h4>
@@ -260,7 +253,7 @@
 							<NetworkChart {authenticatedRelationships} />
 						</div>
 					{:else}
-						<p class="text-sm text-gray-500 ml-2 mb-4">No relationships found for this asset.</p>
+						<p class="text-sm text-gray-500 mb-4">No relationships found for this asset.</p>
 					{/if}
 				</div>
 			{/if}

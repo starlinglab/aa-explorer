@@ -8,8 +8,12 @@ const defaultEndpoints: EndpointConfig[] = [
 		url: 'https://stanford.aa.dev.starlinglab.org'
 	},
 	{
-		name: 'kira',
+		name: 'K. Pollack',
 		url: 'https://kira.aa.prod.starlinglab.org'
+	},
+	{
+		name: 'C. Morris',
+		url: 'https://chris.aa.prod.starlinglab.org'
 	}
 ];
 
