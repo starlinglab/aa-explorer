@@ -5,6 +5,7 @@ import * as ed from '@noble/ed25519';
 import type { AttestationValue, IndividualAttestation } from './types';
 
 // Known public keys array - should be moved to a global store
+// Unsure what's best here
 const knownPubkeys: Array<Uint8Array> = [];
 
 // Define a new result type for more nuanced verification outcomes
