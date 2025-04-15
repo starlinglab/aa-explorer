@@ -35,7 +35,7 @@
 <table class="divide-y divide-gray-200 w-full">
 	<thead>
 		<tr>
-			{#each ['', '', 'Attestation', 'Signer'] as header, i}
+			{#each ['H / S / T', 'Attestation & Signer', 'Value', 'Signer'] as header, i}
 				<th
 					class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 					style="width: {i === 2 ? '70%' : '10%'}">{header}</th
@@ -50,9 +50,9 @@
 			>
 				<td class="px-4 py-2 text-l text-gray-700" style="width: 10%">
 					<div class="flex space-x-2">
-						<VerifyButton copy={'✔️'} kind={'hash'} data={attribute} {selectedCID} />
-						<VerifyButton copy={'🔑'} kind={'signature'} data={attribute} />
-						<VerifyButton copy={'🗓️'} kind={'timestamp'} data={attribute} />
+						<VerifyButton kind={'hash'} data={attribute} {selectedCID} />
+						<VerifyButton kind={'signature'} data={attribute} />
+						<VerifyButton kind={'timestamp'} data={attribute} />
 					</div>
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-700 text-right" style="width: 10%">
