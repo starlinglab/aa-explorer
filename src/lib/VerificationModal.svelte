@@ -219,9 +219,13 @@
 								data.value.signature.pubKey
 							)}</pre>
 						<p class="mt-3">Signature:</p>
-						<pre class="whitespace-pre-wrap break-all bg-gray-200 p-2 rounded">
-							{uint8ArrayToHex(data.value.signature.sig)}
+						<pre class="whitespace-pre-wrap break-all bg-gray-200 p-2 rounded">{uint8ArrayToHex(
+								data.value.signature.sig
+							)}
 						</pre>
+						<p class="mt-2">Hash of the signed attestation:</p>
+						<pre
+							class="whitespace-pre-wrap break-all bg-gray-200 p-2 rounded">{data.value.signature.msg.toString()}</pre>
 					</div>
 				</div>
 			{:else if kind === 'timestamp' && !isLoading && data}
