@@ -3,10 +3,8 @@ import * as block from 'multiformats/block';
 import { sha256 } from 'multiformats/hashes/sha2';
 import * as ed from '@noble/ed25519';
 import type { AttestationValue, IndividualAttestation } from './types';
-
-// Known public keys array - should be moved to a global store
-// Unsure what's best here
-const knownPubkeys: Array<Uint8Array> = [];
+import { knownPublicKeys } from './stores';
+import { get } from 'svelte/store';
 
 // Cache and rate-limiting for timestamp verification
 // Map of CID string to { timestamp: Date, result: boolean }
@@ -18,6 +16,8 @@ export type VerificationResult = {
 	status: 'verified' | 'unverified' | 'present' | 'unknown_key' | 'cached';
 	cachedValue?: boolean; // For cached results, the previously computed value
 	cacheTimestamp?: Date; // When the result was cached
+	knownKey?: boolean; // Whether the key is known
+	keyName?: string; // Name of the known key if available
 };
 
 export async function verifyData(
@@ -35,14 +35,14 @@ export async function verifyData(
 			// For signature, check if signature is present first
 			if (data.value.signature) {
 				// If signature exists, verify it
-				const { valid, knownKey } = await verifySignature(data.value);
+				const { valid, knownKey, keyName } = await verifySignature(data.value);
 
 				if (valid && knownKey) {
-					return { status: 'verified' }; // Signature valid, known key
+					return { status: 'verified', knownKey, keyName }; // Signature valid, known key
 				} else if (valid && !knownKey) {
-					return { status: 'unknown_key' }; // Signature valid, unknown key
+					return { status: 'unknown_key', knownKey: false }; // Signature valid, unknown key
 				} else {
-					return { status: 'present' }; // Signature exists but doesn't verify
+					return { status: 'present', knownKey }; // Signature exists but doesn't verify
 				}
 			}
 			return { status: 'unverified' }; // No signature at all
@@ -93,8 +93,14 @@ export async function verifyData(
 
 export const verifySignature = async (
 	av: AttestationValue
-): Promise<{ valid: boolean; knownKey: boolean }> => {
-	const isKnownKey = knownPubkeys.includes(av.signature.pubKey);
+): Promise<{ valid: boolean; knownKey: boolean; keyName?: string }> => {
+	const keys = get(knownPublicKeys);
+	// Convert public key to hex string for comparison
+	const pubKeyHex = Array.from(av.signature.pubKey)
+		.map(b => b.toString(16).padStart(2, '0'))
+		.join('');
+	const knownKey = keys.find(entry => entry.key === pubKeyHex);
+	const isKnownKey = !!knownKey;
 
 	// First check if the CID matches the message
 	const attBlock = await block.encode({
@@ -104,7 +110,7 @@ export const verifySignature = async (
 	});
 	if (!attBlock.cid.equals(av.signature.msg)) {
 		// CID mismatch means invalid signature
-		return { valid: false, knownKey: isKnownKey };
+		return { valid: false, knownKey: isKnownKey, keyName: knownKey?.name };
 	}
 
 	// Verify the signature cryptographically
@@ -114,7 +120,11 @@ export const verifySignature = async (
 		av.signature.pubKey
 	);
 
-	return { valid: isValid, knownKey: isKnownKey };
+	return { 
+		valid: isValid, 
+		knownKey: isKnownKey,
+		keyName: knownKey?.name
+	};
 };
 
 export const verifyTimestamp = async (av: AttestationValue): Promise<boolean> => {

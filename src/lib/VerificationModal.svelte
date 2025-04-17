@@ -98,7 +98,12 @@
 							<p class="mt-2 text-sm">The attestation CID matches the selected CID.</p>
 						{:else if kind === 'signature'}
 							<p class="mt-2 text-sm">
-								The digital signature is valid and was created with a known public key.
+								The digital signature is valid and was created with a known public key
+								{#if verificationResult.keyName}
+									– that of: <strong>{verificationResult.keyName}</strong>.
+								{:else}
+									.
+								{/if}
 							</p>
 						{:else if kind === 'timestamp'}
 							<p class="mt-2 text-sm">
