@@ -2,7 +2,9 @@
 	import Modal from './Modal.svelte';
 	import { verifyData, type VerificationResult } from './verification';
 	import { verificationModalStore, hideVerificationModal } from './stores';
+	import { uint8ArrayToHex } from '$lib/index';
 	import { CheckmarkIcon, QuestionIcon, CrossIcon } from './icons';
+	import type { IndividualAttestation } from './types';
 
 	// Local reactive variables
 	let verificationResult: VerificationResult | null = null;
@@ -79,11 +81,11 @@
 							? 'bg-green-100 border border-green-400 text-green-700'
 							: verificationResult.status === 'cached' && verificationResult.cachedValue
 								? 'bg-green-100 border border-green-400 text-green-700 opacity-90'
-							: verificationResult.status === 'unknown_key'
-								? 'bg-orange-100 border border-orange-400 text-orange-700'
-								: verificationResult.status === 'present'
-									? 'bg-orange-100 border border-red-400 text-red-700'
-									: 'bg-red-100 border border-red-400 text-red-700'
+								: verificationResult.status === 'unknown_key'
+									? 'bg-orange-100 border border-orange-400 text-orange-700'
+									: verificationResult.status === 'present'
+										? 'bg-orange-100 border border-red-400 text-red-700'
+										: 'bg-red-100 border border-red-400 text-red-700'
 					} px-4 py-3 rounded relative`}
 				>
 					{#if verificationResult.status === 'verified'}
@@ -109,13 +111,15 @@
 								<CheckmarkIcon class="w-6 h-6 text-green-500 mr-2 opacity-90" />
 								<span>Verification successful! (cached result)</span>
 							</div>
-							
+
 							{#if kind === 'timestamp'}
 								<p class="mt-2 text-sm">
-									The timestamp proof was recently verified and is valid. Using cached result to reduce blockchain queries.
+									The timestamp proof was recently verified and is valid. Using cached result to
+									reduce blockchain queries.
 								</p>
 								<p class="mt-2 text-xs text-gray-600">
-									Note: Cache expires after 5 minutes. Results from a fresh verification will be shown then.
+									Note: Cache expires after 5 minutes. Results from a fresh verification will be
+									shown then.
 								</p>
 							{/if}
 						{:else}
@@ -123,13 +127,15 @@
 								<QuestionIcon class="w-6 h-6 text-red-500 mr-2 opacity-90" />
 								<span>Verification failed! (cached result)</span>
 							</div>
-							
+
 							{#if kind === 'timestamp'}
 								<p class="mt-2 text-sm">
-									The timestamp was recently checked and couldn't be verified. Using cached result to reduce blockchain queries.
+									The timestamp was recently checked and couldn't be verified. Using cached result
+									to reduce blockchain queries.
 								</p>
 								<p class="mt-2 text-xs text-gray-600">
-									Note: Cache expires after 5 minutes. Results from a fresh verification will be shown then.
+									Note: Cache expires after 5 minutes. Results from a fresh verification will be
+									shown then.
 								</p>
 							{/if}
 						{/if}
@@ -200,9 +206,15 @@
 			{:else if kind === 'signature' && !isLoading && data}
 				<div class="mt-4 border-t pt-4">
 					<h3 class="font-semibold mb-2">Technical Details</h3>
-					<div class="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto">
-						<p>Public Key: {Array.from(data.value.signature.pubKey).slice(0, 8).join(', ')}...</p>
-						<p>Signature: {Array.from(data.value.signature.sig).slice(0, 8).join(', ')}...</p>
+					<div class="bg-gray-100 p-3 rounded text-sm font-mono">
+						<p>Public Key:</p>
+						<pre class="whitespace-pre-wrap break-all bg-gray-200 p-2 rounded">{uint8ArrayToHex(
+								data.value.signature.pubKey
+							)}</pre>
+						<p class="mt-3">Signature:</p>
+						<pre class="whitespace-pre-wrap break-all bg-gray-200 p-2 rounded">
+							{uint8ArrayToHex(data.value.signature.sig)}
+						</pre>
 					</div>
 				</div>
 			{:else if kind === 'timestamp' && !isLoading && data}
@@ -212,7 +224,9 @@
 						<p>Timestamp Message: {data.value.timestamp.ots.msg.toString()}</p>
 						<p>Upgraded: {data.value.timestamp.ots.upgraded ? 'Yes' : 'No'}</p>
 						{#if verificationResult && verificationResult.status === 'cached' && verificationResult.cacheTimestamp}
-							<p class="text-gray-600">Cached: {verificationResult.cacheTimestamp.toLocaleString()}</p>
+							<p class="text-gray-600">
+								Cached: {verificationResult.cacheTimestamp.toLocaleString()}
+							</p>
 						{/if}
 					</div>
 				</div>
