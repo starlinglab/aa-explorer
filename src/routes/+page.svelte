@@ -14,6 +14,9 @@
 	} from '$lib/index';
 	import { DownloadIcon } from '$lib/icons';
 
+	// Track whether the image loaded successfully
+	let imageLoaded = true;
+
 	let data: { cids?: Array<string>; error?: string } = {};
 	let selectedCID: string | null = null;
 	let selectedAttestations: ListOfAttestations = [];
@@ -118,6 +121,8 @@
 		window.dispatchEvent(new Event('popstate')); // Manually trigger popstate event
 		selectedError = null;
 		isLoading = true;
+		// Reset image loading state when selecting a new CID
+		imageLoaded = true;
 		try {
 			const attestations = await fetchAllAttestations(cid);
 			selectedAttestations = attestations as ListOfAttestations;
@@ -135,6 +140,15 @@
 			// Update the store
 			storeCID.set(null);
 		}
+	}
+
+	// Handle image loading errors
+	function handleImageError() {
+		imageLoaded = false;
+	}
+
+	function handleImageLoad() {
+		imageLoaded = true;
 	}
 
 	const KeysOfAuthenticatedRelationships = [
@@ -176,7 +190,7 @@
 						{#if cid}
 							<div
 								class="absolute inset-0 flex items-center justify-center
-		text-xs text-gray-700 opacity-0 hover:opacity-100"
+	text-xs text-gray-700 opacity-0 hover:opacity-100"
 							>
 								{shortenCID(cid)}
 							</div>
@@ -195,8 +209,14 @@
 						src={`https://files.dev.starlinglab.org/${selectedCID}-thumb`}
 						alt=""
 						class="h-80 object-contain mx-auto"
+						on:error={handleImageError}
+						on:load={handleImageLoad}
 					/>
-					<p class="text-xs text-gray-500 mt-1">This is an optimised preview of the asset.</p>
+					{#if imageLoaded}
+						<p class="text-xs text-gray-500 mt-1">This is an optimised preview of the asset.</p>
+					{:else}
+						<p class="text-xs text-gray-500 mt-1">No preview available for this asset.</p>
+					{/if}
 					<p class="text-xs text-gray-500 mb-2">
 						Hash: <code>{shortenCID(selectedCID)}</code>
 						<CopyButton
