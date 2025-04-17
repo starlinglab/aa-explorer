@@ -9,7 +9,6 @@
 	// Local reactive variables
 	let verificationResult: VerificationResult | null = null;
 	let isLoading = true;
-	let errorMessage: string | null = null;
 
 	// Subscribe to the store
 	$: modalData = $verificationModalStore;
@@ -25,15 +24,8 @@
 
 	async function verifyDetails() {
 		isLoading = true;
-		errorMessage = null;
-
-		try {
-			verificationResult = await verifyData(kind, data!, selectedCID);
-			isLoading = false;
-		} catch (error) {
-			errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-			isLoading = false;
-		}
+		verificationResult = await verifyData(kind, data!, selectedCID);
+		isLoading = false;
 	}
 
 	function getVerificationTitle(): string {
@@ -68,11 +60,6 @@
 					<div
 						class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"
 					></div>
-				</div>
-			{:else if errorMessage}
-				<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-					<strong class="font-bold">Error:</strong>
-					<span class="block sm:inline"> {errorMessage}</span>
 				</div>
 			{:else if verificationResult}
 				<div

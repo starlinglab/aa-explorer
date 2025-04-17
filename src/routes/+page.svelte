@@ -22,7 +22,6 @@
 	let selectedAttestations: ListOfAttestations = [];
 	let selectedError: string | null = null;
 	let isLoading: boolean = false;
-	let hasCopiedCID: boolean = false;
 
 	// Store current endpoints state
 	let currentEndpoints: EndpointConfig[] = [];
@@ -222,7 +221,6 @@
 						<CopyButton
 							textToCopy={selectedCID}
 							label="Copy CID to clipboard"
-							showFullText={false}
 							displayStyle="icon"
 						/> |
 						<a

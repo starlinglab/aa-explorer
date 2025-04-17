@@ -47,9 +47,6 @@ export async function verifyData(
 			}
 			return { status: 'unverified' }; // No signature at all
 		case 'timestamp':
-			console.log('Timestamp present:', !!data.value.timestamp);
-			console.log('OTS present:', data.value.timestamp ? !!data.value.timestamp.ots : false);
-
 			if (data.value.timestamp && data.value.timestamp.ots) {
 				// Get timestamp ID for cache lookup
 				const timestampId = data.value.timestamp.ots.msg.toString();
@@ -80,13 +77,11 @@ export async function verifyData(
 						status: isTimestampValid ? 'verified' : 'present' // 'present' means timestamp exists but doesn't verify
 					};
 				} catch (error) {
-					console.log('Error verifying timestamp:', error);
 					return { status: 'present' }; // Error during verification but timestamp exists
 				}
 			}
 			return { status: 'unverified' }; // No timestamp at all
 		default:
-			console.log('Unknown kind:', kind);
 			return { status: 'unverified' };
 	}
 }
@@ -130,7 +125,6 @@ export const verifySignature = async (
 export const verifyTimestamp = async (av: AttestationValue): Promise<boolean> => {
 	// Ensure timestamp and ots objects exist
 	if (!av.timestamp || !av.timestamp.ots || !av.timestamp.ots.msg) {
-		console.log('Timestamp data is missing required fields:', av.timestamp);
 		return false;
 	}
 
@@ -143,12 +137,9 @@ export const verifyTimestamp = async (av: AttestationValue): Promise<boolean> =>
 		const now = new Date();
 		// If the cache entry is still valid
 		if (now.getTime() - cachedResult.timestamp.getTime() < TIMESTAMP_CACHE_TTL) {
-			console.log(`Using cached timestamp verification result for ${timestampId}`);
 			return cachedResult.result;
-		} else {
-			// Expired cache entry, remove it
-			timestampVerificationCache.delete(timestampId);
 		}
+		// No need to delete expired cache entries as they'll be overwritten
 	}
 
 	// Get OpenTimestamps from window
@@ -158,9 +149,6 @@ export const verifyTimestamp = async (av: AttestationValue): Promise<boolean> =>
 		return false;
 	}
 
-	// Log information about the asset
-	console.log('Asset timestamp:', av.timestamp);
-
 	// First, verify that the timestamp message matches what we expect
 	try {
 		const timestampedBlock = await block.encode({
@@ -169,9 +157,8 @@ export const verifyTimestamp = async (av: AttestationValue): Promise<boolean> =>
 			hasher: sha256
 		});
 
-		// Due to a breaking change in AA, we're "only comparing string representations here
+		// Due to a breaking change in AA, we're comparing string representations
 		if (timestampedBlock.cid.toString() !== av.timestamp.ots.msg.toString()) {
-			console.log('CID mismatch for timestamp, verification skipped');
 			// Cache the negative result
 			timestampVerificationCache.set(timestampId, {
 				timestamp: new Date(),
@@ -180,7 +167,6 @@ export const verifyTimestamp = async (av: AttestationValue): Promise<boolean> =>
 			return false;
 		}
 	} catch (error) {
-		console.error('Error during CID verification:', error);
 		// Cache the error result
 		timestampVerificationCache.set(timestampId, {
 			timestamp: new Date(),
@@ -189,12 +175,10 @@ export const verifyTimestamp = async (av: AttestationValue): Promise<boolean> =>
 		return false;
 	}
 
-	// https://github.com/opentimestamps/javascript-opentimestamps?tab=readme-ov-file#verify-1
 	// Timestamp is on text version of CID, see AA code
 	try {
 		// Ensure proof data exists
 		if (!av.timestamp.ots.proof || !(av.timestamp.ots.proof instanceof Uint8Array)) {
-			console.log('Missing or invalid timestamp proof data:', av.timestamp.ots.proof);
 			timestampVerificationCache.set(timestampId, {
 				timestamp: new Date(),
 				result: false
@@ -205,31 +189,18 @@ export const verifyTimestamp = async (av: AttestationValue): Promise<boolean> =>
 		const file: Uint8Array = new TextEncoder().encode(av.timestamp.ots.msg.toString());
 		const fileOts: Uint8Array = av.timestamp.ots.proof;
 
-		// Log details for debugging
-		console.log('Timestamp data for verification:');
-		console.log('- File length:', file.length);
-		console.log('- OTS proof length:', fileOts.length);
-
 		const detached = OpenTimestamps.DetachedTimestampFile.fromBytes(
 			new OpenTimestamps.Ops.OpSHA256(),
 			file
 		);
 		const detachedOts = OpenTimestamps.DetachedTimestampFile.deserialize(fileOts);
-		let result = undefined;
-
-		// Log when we're making actual blockchain verification requests
-		console.log(`Verifying timestamp for ${timestampId} with OpenTimestamps...`);
-
-		result = OpenTimestamps.verify(detachedOts, detached, { ignoreBitcoinNode: true }) as
+		
+		const result = OpenTimestamps.verify(detachedOts, detached, { ignoreBitcoinNode: true }) as
 			| Record<string, { timestamp: number; height: number }>
 			| undefined;
 
 		// Cache the result (positive or negative)
 		const isVerified = result != null;
-
-		if (isVerified && result) {
-			console.log('Verification details:', result);
-		}
 
 		timestampVerificationCache.set(timestampId, {
 			timestamp: new Date(),
@@ -238,8 +209,6 @@ export const verifyTimestamp = async (av: AttestationValue): Promise<boolean> =>
 
 		return isVerified;
 	} catch (error) {
-		console.log(error);
-
 		// Cache the error result
 		timestampVerificationCache.set(timestampId, {
 			timestamp: new Date(),

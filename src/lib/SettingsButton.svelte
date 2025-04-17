@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import SettingsModal from './SettingsModal.svelte';
 	import { SettingsIcon } from './icons';
 	

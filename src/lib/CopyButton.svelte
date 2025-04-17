@@ -4,7 +4,6 @@
 	export let textToCopy: string;
 	export let shortText: string | null = null;
 	export let label: string = 'Copy to clipboard';
-	export let showFullText: boolean = true;
 	export let displayStyle: 'icon' | 'text' | 'both' = 'both';
 
 	let hasCopied: boolean = false;
@@ -20,7 +19,7 @@
 	}
 </script>
 
-{#if showFullText && shortText}
+{#if shortText && displayStyle !== 'icon'}
 	<span class="font-mono">{shortText}</span>
 {/if}
 
@@ -43,7 +42,7 @@
 			</span>
 		{/if}
 		{#if displayStyle === 'text' || displayStyle === 'both'}
-			<span class="text-xs">{showFullText ? 'Click to copy' : 'Copy'}</span>
+			<span class="text-xs">{displayStyle === 'both' ? 'Click to copy' : 'Copy'}</span>
 		{/if}
 	{/if}
 </button>

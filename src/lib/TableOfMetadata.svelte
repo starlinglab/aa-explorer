@@ -96,7 +96,6 @@
 						<CopyButton
 							textToCopy={String(getAttribute(attribute))}
 							label="Copy {getKey(attribute)} hash"
-							showFullText={false}
 							displayStyle="icon"
 						/>
 					{:else}
