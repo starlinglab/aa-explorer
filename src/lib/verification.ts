@@ -159,12 +159,8 @@ export const verifyTimestamp = async (av: AttestationValue): Promise<boolean> =>
 			hasher: sha256
 		});
 
-		// @TODO: Something is failing here for David Guttenfelder's photos, and not for Kira's.
-		console.log('Verifying timestamp CID match:');
-		console.log('Expected CID:', timestampedBlock.cid.toString());
-		console.log('Timestamp Message CID:', av.timestamp.ots.msg.toString());
-
-		if (!timestampedBlock.cid.equals(av.timestamp.ots.msg)) {
+		// Due to a breaking change in AA, we're "only comparing string representations here
+		if (timestampedBlock.cid.toString() !== av.timestamp.ots.msg.toString()) {
 			console.log('CID mismatch for timestamp, verification skipped');
 			// Cache the negative result
 			timestampVerificationCache.set(timestampId, {
