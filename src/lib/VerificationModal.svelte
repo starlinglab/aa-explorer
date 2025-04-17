@@ -43,7 +43,7 @@
 	function getVerificationDetails(): string {
 		switch (kind) {
 			case 'hash':
-				return `Verifying the attestation's hash.`;
+				return `Verifying the asset's hash.`;
 			case 'signature':
 				return 'Verifying the digital signature using the embedded public key.';
 			case 'timestamp':
@@ -95,7 +95,9 @@
 						</div>
 
 						{#if kind === 'hash'}
-							<p class="mt-2 text-sm">The attestation CID matches the selected CID.</p>
+							<p class="mt-2 text-sm">
+								The asset's hash matches the one contained in the metadata.
+							</p>
 						{:else if kind === 'signature'}
 							<p class="mt-2 text-sm">
 								The digital signature is valid and was created with a known public key
@@ -204,8 +206,8 @@
 				<div class="mt-4 border-t pt-4">
 					<h3 class="font-semibold mb-2">Technical Details</h3>
 					<div class="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto">
-						<p>Selected CID: {selectedCID || 'None'}</p>
-						<p>Attestation CID: {data.value.attestation.CID.toString()}</p>
+						<p>CID of asset: {selectedCID || 'None'}</p>
+						<p class="mt-2">CID in the Attestation: {data.value.attestation.CID.toString()}</p>
 					</div>
 				</div>
 			{:else if kind === 'signature' && !isLoading && data}
