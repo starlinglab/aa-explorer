@@ -169,7 +169,7 @@
 <!-- Main container with fixed height (accounts for navbar) -->
 <div class="flex overflow-hidden" style="height: calc(100vh - 80px)">
 	<!-- Left panel - Assets grid (independently scrollable) -->
-	<div class="flex-grow overflow-auto p-4">
+	<div class="w-1/2 overflow-auto p-4 {selectedCID ? 'lg:w-2/3' : 'flex-grow'}">
 		{#if data.error}
 			<p class="text-red-500">Error: {data.error}</p>
 		{:else if !data.cids || data.cids.length === 0}
@@ -203,8 +203,12 @@
 	</div>
 
 	<!-- Right panel - Details (independently scrollable) -->
-	<div class="w-160 border-l border-gray-300 overflow-auto">
-		<div class="p-3">
+	<div
+		class="{selectedCID
+			? 'w-1/2 lg:w-1/3'
+			: 'w-0'} border-l border-gray-300 overflow-auto transition-all duration-300 ease-in-out"
+	>
+		<div class="p-3 {!selectedCID ? 'hidden' : ''}">
 			{#if selectedCID}
 				<div class="flex">
 					<div class="w-full p-1">
@@ -243,7 +247,7 @@
 				</div>
 				<hr class="gray-200 mt-2 mb-2" />
 				{#if isLoading}
-					<div class="w-320">
+					<div class="w-full">
 						<p class="text-sm text-gray-500">Loading attestations...</p>
 					</div>
 				{:else if selectedError}
@@ -281,10 +285,6 @@
 						{/if}
 					</div>
 				{/if}
-			{:else}
-				<div class="w-160">
-					<p class="text-sm text-gray-500">Click an item to view its attestations.</p>
-				</div>
 			{/if}
 		</div>
 	</div>
