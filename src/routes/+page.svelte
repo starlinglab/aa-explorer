@@ -166,8 +166,10 @@
 	);
 </script>
 
-<div class="flex h-screen">
-	<div class="flex-grow p-4 overflow-auto">
+<!-- Main container with fixed height (accounts for navbar) -->
+<div class="flex overflow-hidden" style="height: calc(100vh - 80px)">
+	<!-- Left panel - Assets grid (independently scrollable) -->
+	<div class="flex-grow overflow-auto p-4">
 		{#if data.error}
 			<p class="text-red-500">Error: {data.error}</p>
 		{:else if !data.cids || data.cids.length === 0}
@@ -179,7 +181,7 @@
 						on:click={() => loadAttestations(cid)}
 						on:keydown={(event) => event.key === 'Enter' && loadAttestations(cid)}
 						class="cid-item relative z-0 w-30 h-30 bg-gray-200 border border-dashed border-gray-300
-        transition-transform duration-200 transform {selectedCID === cid
+						transition-transform duration-200 transform {selectedCID === cid
 							? 'scale-140 bg-gray-300 border-solid border-gray-800 z-10'
 							: 'hover:scale-120 hover:bg-gray-300 hover:border-solid hover:border-gray-800 hover:z-10 hover:cursor-pointer'}"
 						title={cid.toString()}
@@ -189,7 +191,7 @@
 						{#if cid}
 							<div
 								class="absolute inset-0 flex items-center justify-center
-	text-xs text-gray-700 opacity-0 hover:opacity-100"
+								text-xs text-gray-700 opacity-0 hover:opacity-100"
 							>
 								{shortenCID(cid)}
 							</div>
@@ -200,89 +202,90 @@
 		{/if}
 	</div>
 
-	<div class="w-160 p-3 border-l border-gray-300">
-		{#if selectedCID}
-			<div class="flex">
-				<div class="w-full p-1">
-					<img
-						src={`https://files.dev.starlinglab.org/${selectedCID}-thumb`}
-						alt=""
-						class="h-80 object-contain mx-auto"
-						on:error={handleImageError}
-						on:load={handleImageLoad}
-					/>
-					{#if imageLoaded}
-						<p class="text-xs text-gray-500 mt-1">This is an optimised preview of the asset.</p>
-					{:else}
-						<p class="text-xs text-gray-500 mt-1">No preview available for this asset.</p>
-					{/if}
-					<p class="text-xs text-gray-500 mb-2">
-						Hash: <code>{shortenCID(selectedCID)}</code>
-						<CopyButton
-							textToCopy={selectedCID}
-							label="Copy CID to clipboard"
-							displayStyle="icon"
-						/> |
-						<a
-							href={`https://files.dev.starlinglab.org/${selectedCID}`}
-							download
-							class="text-blue-500 hover:underline inline-flex align-text-bottom"
-							title="Download original file"
-						>
-							<span class="inline-flex gap-1">
-								<DownloadIcon class="w-4 h-4" />
-								<span>Download original file</span>
-							</span>
-						</a>
-					</p>
-				</div>
-			</div>
-		{/if}
-		<hr class="gray-200 mt-2 mb-2" />
-		{#if selectedCID}
-			{#if isLoading}
-				<div class="w-320">
-					<p class="text-sm text-gray-500">Loading attestations...</p>
-				</div>
-			{:else if selectedError}
-				<p class="text-red-500 text-sm">Error: {selectedError}</p>
-			{:else}
-				<div class="w-full overflow-x-auto">
-					<h3 class="text-base font-semibold">Authenticated Metadata</h3>
-					<p class="text-sm text-gray-700">
-						The following metadata might come from the following sources, and in this order.<br />
-						Click on a source to select it as primary. Head to the Settings menu to add sources.
-					</p>
-					<div class="mb-3 flex flex-wrap gap-2">
-						{#each currentEndpoints as endpoint}
-							<button
-								class={`text-xs px-2 py-1 rounded ${currentEndpoints[0]?.url === endpoint.url ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-								on:click={() => reorderEndpoints(endpoint)}
+	<!-- Right panel - Details (independently scrollable) -->
+	<div class="w-160 border-l border-gray-300 overflow-auto">
+		<div class="p-3">
+			{#if selectedCID}
+				<div class="flex">
+					<div class="w-full p-1">
+						<img
+							src={`https://files.dev.starlinglab.org/${selectedCID}-thumb`}
+							alt=""
+							class="h-80 object-contain mx-auto"
+							on:error={handleImageError}
+							on:load={handleImageLoad}
+						/>
+						{#if imageLoaded}
+							<p class="text-xs text-gray-500 mt-1">This is an optimised preview of the asset.</p>
+						{:else}
+							<p class="text-xs text-gray-500 mt-1">No preview available for this asset.</p>
+						{/if}
+						<p class="text-xs text-gray-500 mb-2">
+							Hash: <code>{shortenCID(selectedCID)}</code>
+							<CopyButton
+								textToCopy={selectedCID}
+								label="Copy CID to clipboard"
+								displayStyle="icon"
+							/> |
+							<a
+								href={`https://files.dev.starlinglab.org/${selectedCID}`}
+								download
+								class="text-blue-500 hover:underline inline-flex align-text-bottom"
+								title="Download original file"
 							>
-								{endpoint.name}
-							</button>
-						{/each}
+								<span class="inline-flex gap-1">
+									<DownloadIcon class="w-4 h-4" />
+									<span>Download original file</span>
+								</span>
+							</a>
+						</p>
 					</div>
-					<p class="text-xs text-gray-500">Legend: (H)ash, (S)ignature, (T)imestamp</p>
-					<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
-
-					<h4 class="text-base font-semibold mt-4">Authenticated Relationships</h4>
-					{#if authenticatedRelationships.length > 0}
-						<TableOfMetadata data={authenticatedRelationships} {selectedCID}></TableOfMetadata>
-
-						<h4 class="text-base font-semibold mt-4">Relationship Network</h4>
-						<div class="w-full">
-							<NetworkChart {authenticatedRelationships} />
+				</div>
+				<hr class="gray-200 mt-2 mb-2" />
+				{#if isLoading}
+					<div class="w-320">
+						<p class="text-sm text-gray-500">Loading attestations...</p>
+					</div>
+				{:else if selectedError}
+					<p class="text-red-500 text-sm">Error: {selectedError}</p>
+				{:else}
+					<div class="w-full overflow-x-auto">
+						<h3 class="text-base font-semibold">Authenticated Metadata</h3>
+						<p class="text-sm text-gray-700">
+							The following metadata might come from the following sources, and in this order.<br />
+							Click on a source to select it as primary. Head to the Settings menu to add sources.
+						</p>
+						<div class="mb-3 flex flex-wrap gap-2">
+							{#each currentEndpoints as endpoint}
+								<button
+									class={`text-xs px-2 py-1 rounded ${currentEndpoints[0]?.url === endpoint.url ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+									on:click={() => reorderEndpoints(endpoint)}
+								>
+									{endpoint.name}
+								</button>
+							{/each}
 						</div>
-					{:else}
-						<p class="text-sm text-gray-500 mb-4">No relationships found for this asset.</p>
-					{/if}
+						<p class="text-xs text-gray-500">Legend: (H)ash, (S)ignature, (T)imestamp</p>
+						<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
+
+						<h4 class="text-base font-semibold mt-4">Authenticated Relationships</h4>
+						{#if authenticatedRelationships.length > 0}
+							<TableOfMetadata data={authenticatedRelationships} {selectedCID}></TableOfMetadata>
+
+							<h4 class="text-base font-semibold mt-4">Relationship Network</h4>
+							<div class="w-full">
+								<NetworkChart {authenticatedRelationships} />
+							</div>
+						{:else}
+							<p class="text-sm text-gray-500 mb-4">No relationships found for this asset.</p>
+						{/if}
+					</div>
+				{/if}
+			{:else}
+				<div class="w-160">
+					<p class="text-sm text-gray-500">Click an item to view its attestations.</p>
 				</div>
 			{/if}
-		{:else}
-			<div class="w-160">
-				<p class="text-sm text-gray-500">Click an item to view its attestations.</p>
-			</div>
-		{/if}
+		</div>
 	</div>
 </div>
