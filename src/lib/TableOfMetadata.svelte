@@ -36,22 +36,24 @@
 		);
 	};
 
-	// Function to get all registered attribute names from the registrations data
-	const getRegisteredAttributes = (data: ListOfAttestations): Set<string> => {
-		const registeredAttrs = new Set<string>();
-		
-		const registrationsAttestation = data.find(att => getKey(att) === 'registrations');
+	// Function to get registration info for attributes from the registrations data
+	const getRegisteredAttributes = (data: ListOfAttestations): Map<string, string> => {
+		const registeredAttrs = new Map<string, string>();
+
+		const registrationsAttestation = data.find((att) => getKey(att) === 'registrations');
 		if (registrationsAttestation) {
 			const registrations = getAttribute(registrationsAttestation) as Registration[];
 			if (Array.isArray(registrations)) {
-				registrations.forEach(registration => {
+				registrations.forEach((registration) => {
 					if (registration.attrs && Array.isArray(registration.attrs)) {
-						registration.attrs.forEach(attr => registeredAttrs.add(attr));
+						registration.attrs.forEach((attr) => {
+							registeredAttrs.set(attr, registration.chain);
+						});
 					}
 				});
 			}
 		}
-		
+
 		return registeredAttrs;
 	};
 
@@ -91,7 +93,9 @@
 					</div>
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-500 text-right">
-					{#if registeredAttributes.has(getKey(attribute))}🔑 {/if}{getKey(attribute)}:
+					{getKey(attribute)}:{#if registeredAttributes.has(getKey(attribute))}<br />Registered on: {registeredAttributes.get(
+							getKey(attribute)
+						)}{/if}
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-700">
 					{#if getKey(attribute) === 'produced_by'}
