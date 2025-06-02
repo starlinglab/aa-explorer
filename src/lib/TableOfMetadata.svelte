@@ -72,14 +72,16 @@
 		}
 	};
 
-	$: sortedData = [...data].sort((a, b) => {
-		// Primary source attestations come first
-		if (a.isPrimarySource && !b.isPrimarySource) return -1;
-		if (!a.isPrimarySource && b.isPrimarySource) return 1;
+	$: sortedData = [...data]
+		.filter((att) => getKey(att) !== 'registrations')
+		.sort((a, b) => {
+			// Primary source attestations come first
+			if (a.isPrimarySource && !b.isPrimarySource) return -1;
+			if (!a.isPrimarySource && b.isPrimarySource) return 1;
 
-		// If both from same source, sort by key
-		return getKey(a).localeCompare(getKey(b));
-	});
+			// If both from same source, sort by key
+			return getKey(a).localeCompare(getKey(b));
+		});
 
 	$: registeredAttributes = getRegisteredAttributes(data);
 </script>
