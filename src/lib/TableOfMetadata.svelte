@@ -8,7 +8,8 @@
 		ListOfAttestations,
 		IndividualAttestation,
 		ProducedBy,
-		Relationship
+		Relationship,
+		Registration
 	} from './types';
 	export let data: ListOfAttestations;
 	export let selectedCID: string;
@@ -35,6 +36,25 @@
 		);
 	};
 
+	// Function to get all registered attribute names from the registrations data
+	const getRegisteredAttributes = (data: ListOfAttestations): Set<string> => {
+		const registeredAttrs = new Set<string>();
+		
+		const registrationsAttestation = data.find(att => getKey(att) === 'registrations');
+		if (registrationsAttestation) {
+			const registrations = getAttribute(registrationsAttestation) as Registration[];
+			if (Array.isArray(registrations)) {
+				registrations.forEach(registration => {
+					if (registration.attrs && Array.isArray(registration.attrs)) {
+						registration.attrs.forEach(attr => registeredAttrs.add(attr));
+					}
+				});
+			}
+		}
+		
+		return registeredAttrs;
+	};
+
 	$: sortedData = [...data].sort((a, b) => {
 		// Primary source attestations come first
 		if (a.isPrimarySource && !b.isPrimarySource) return -1;
@@ -43,6 +63,8 @@
 		// If both from same source, sort by key
 		return getKey(a).localeCompare(getKey(b));
 	});
+
+	$: registeredAttributes = getRegisteredAttributes(data);
 </script>
 
 <table class="divide-y divide-gray-200 w-full">
@@ -69,7 +91,7 @@
 					</div>
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-500 text-right">
-					{getKey(attribute)}:
+					{#if registeredAttributes.has(getKey(attribute))}🔑 {/if}{getKey(attribute)}:
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-700">
 					{#if getKey(attribute) === 'produced_by'}

@@ -40,6 +40,17 @@ export interface Relationship {
 	witness?: CID[];
 }
 
+export interface Registration {
+	attrs: string[];
+	chain: string;
+	data: {
+		assetCid: string;
+		assetTreeCid: string;
+		order_id: string;
+		txHash: string;
+	};
+}
+
 export type IndividualAttestation = {
 	key: string;
 	value: AttestationValue;
