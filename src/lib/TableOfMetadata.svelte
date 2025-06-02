@@ -131,32 +131,7 @@
 					</div>
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-500 text-right">
-					{getKey(attribute)}:{#if shouldShowCardanoRegistration(getKey(attribute), data)}
-						{@const cardanoReg = shouldShowCardanoRegistration(getKey(attribute), data)}
-						{@const explorerUrl = getBlockchainExplorerUrl(
-							cardanoReg.chain,
-							cardanoReg.data.tx_hash
-						)}
-						<br />(registered on:
-						<a
-							href={explorerUrl}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="text-blue-500 hover:underline">{cardanoReg.chain}</a
-						>)
-					{:else if registeredAttributes.has(getKey(attribute))}
-						{@const registrations = registeredAttributes.get(getKey(attribute))}
-						<br />(registered on: {#each registrations || [] as registration, i}{#if i > 0},
-							{/if}{@const explorerUrl = getBlockchainExplorerUrl(
-								registration.chain,
-								registration.data.txHash
-							)}{#if explorerUrl}<a
-									href={explorerUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="text-blue-500 hover:underline">{registration.chain}</a
-								>{:else}{registration.chain}{/if}{/each})
-					{/if}
+					{getKey(attribute)}:
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-700">
 					{#if getKey(attribute) === 'produced_by'}
@@ -187,6 +162,21 @@
 						/>
 					{:else}
 						{getAttribute(attribute)}
+					{/if}
+					{#if registeredAttributes.has(getKey(attribute))}
+						{@const registrations = registeredAttributes.get(getKey(attribute))}
+						<br /><span class="text-xs text-gray-500"
+							>(registered on: {#each registrations || [] as registration, i}{#if i > 0},
+								{/if}{@const explorerUrl = getBlockchainExplorerUrl(
+									registration.chain,
+									registration.data.txHash
+								)}{#if explorerUrl}<a
+										href={explorerUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="text-blue-500 hover:underline">{registration.chain}</a
+									>{:else}{registration.chain}{/if}{/each})</span
+						>
 					{/if}
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-700">
