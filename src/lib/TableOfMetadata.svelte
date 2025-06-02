@@ -8,7 +8,8 @@
 		ListOfAttestations,
 		IndividualAttestation,
 		ProducedBy,
-		Relationship
+		Relationship,
+		Registration
 	} from './types';
 	export let data: ListOfAttestations;
 	export let selectedCID: string;
@@ -35,14 +36,69 @@
 		);
 	};
 
-	$: sortedData = [...data].sort((a, b) => {
-		// Primary source attestations come first
-		if (a.isPrimarySource && !b.isPrimarySource) return -1;
-		if (!a.isPrimarySource && b.isPrimarySource) return 1;
+	// Function to get registration info for attributes from the registrations data
+	const getRegisteredAttributes = (data: ListOfAttestations): Map<string, Registration[]> => {
+		const registeredAttrs = new Map<string, Registration[]>();
+		const cardanoSpecificAttrs = ['sha256', 'time_created', 'media_type'];
 
-		// If both from same source, sort by key
-		return getKey(a).localeCompare(getKey(b));
-	});
+		const registrationsAttestation = data.find((att) => getKey(att) === 'registrations');
+		if (registrationsAttestation) {
+			const registrations = getAttribute(registrationsAttestation) as Registration[];
+			if (Array.isArray(registrations)) {
+				registrations.forEach((registration) => {
+					// For Numbers chain and others: use the attrs array
+					if (
+						registration.chain !== 'cardano' &&
+						registration.attrs &&
+						Array.isArray(registration.attrs)
+					) {
+						registration.attrs.forEach((attr) => {
+							if (!registeredAttrs.has(attr)) {
+								registeredAttrs.set(attr, []);
+							}
+							registeredAttrs.get(attr)!.push(registration);
+						});
+					}
+					// For Cardano chain: use hardcoded attributes
+					else if (registration.chain === 'cardano') {
+						cardanoSpecificAttrs.forEach((attr) => {
+							if (!registeredAttrs.has(attr)) {
+								registeredAttrs.set(attr, []);
+							}
+							registeredAttrs.get(attr)!.push(registration);
+						});
+					}
+				});
+			}
+		}
+
+		return registeredAttrs;
+	};
+
+	// Function to get blockchain explorer URL based on chain and txHash
+	const getBlockchainExplorerUrl = (chain: string, txHash: string): string => {
+		switch (chain) {
+			case 'numbers':
+				return `https://mainnet.num.network/tx/${txHash}`;
+			case 'cardano':
+				return `https://preview.cardanoscan.io/transaction/${txHash}`;
+			default:
+				return '';
+		}
+	};
+
+	$: sortedData = [...data]
+		.filter((att) => getKey(att) !== 'registrations')
+		.sort((a, b) => {
+			// Primary source attestations come first
+			if (a.isPrimarySource && !b.isPrimarySource) return -1;
+			if (!a.isPrimarySource && b.isPrimarySource) return 1;
+
+			// If both from same source, sort by key
+			return getKey(a).localeCompare(getKey(b));
+		});
+
+	$: registeredAttributes = getRegisteredAttributes(data);
 </script>
 
 <table class="divide-y divide-gray-200 w-full">
@@ -100,6 +156,22 @@
 						/>
 					{:else}
 						{getAttribute(attribute)}
+					{/if}
+					{#if registeredAttributes.has(getKey(attribute))}
+						{@const registrations = registeredAttributes.get(getKey(attribute))}
+						<br /><span class="text-xs text-gray-500"
+							>(registered on: {#each registrations || [] as registration, i}{#if i > 0},
+								{/if}{@const txHash =
+									registration.chain === 'cardano'
+										? (registration.data as any).tx_hash
+										: (registration.data as any).txHash}{@const explorerUrl =
+									getBlockchainExplorerUrl(registration.chain, txHash)}{#if explorerUrl}<a
+										href={explorerUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="text-blue-500 hover:underline">{registration.chain}</a
+									>{:else}{registration.chain}{/if}{/each})</span
+						>
 					{/if}
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-700">
