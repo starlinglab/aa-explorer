@@ -37,8 +37,8 @@
 	};
 
 	// Function to get registration info for attributes from the registrations data
-	const getRegisteredAttributes = (data: ListOfAttestations): Map<string, string> => {
-		const registeredAttrs = new Map<string, string>();
+	const getRegisteredAttributes = (data: ListOfAttestations): Map<string, Registration[]> => {
+		const registeredAttrs = new Map<string, Registration[]>();
 
 		const registrationsAttestation = data.find((att) => getKey(att) === 'registrations');
 		if (registrationsAttestation) {
@@ -47,7 +47,10 @@
 				registrations.forEach((registration) => {
 					if (registration.attrs && Array.isArray(registration.attrs)) {
 						registration.attrs.forEach((attr) => {
-							registeredAttrs.set(attr, registration.chain);
+							if (!registeredAttrs.has(attr)) {
+								registeredAttrs.set(attr, []);
+							}
+							registeredAttrs.get(attr)!.push(registration);
 						});
 					}
 				});
@@ -55,6 +58,18 @@
 		}
 
 		return registeredAttrs;
+	};
+
+	// Function to get blockchain explorer URL based on chain and txHash
+	const getBlockchainExplorerUrl = (chain: string, txHash: string): string => {
+		switch (chain) {
+			case 'numbers':
+				return `https://mainnet.num.network/tx/${txHash}`;
+			case 'cardano':
+				return `https://preview.cardanoscan.io/transaction/${txHash}`;
+			default:
+				return '';
+		}
 	};
 
 	$: sortedData = [...data].sort((a, b) => {
@@ -93,9 +108,19 @@
 					</div>
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-500 text-right">
-					{getKey(attribute)}:{#if registeredAttributes.has(getKey(attribute))}<br />Registered on: {registeredAttributes.get(
-							getKey(attribute)
-						)}{/if}
+					{getKey(attribute)}:{#if registeredAttributes.has(getKey(attribute))}
+						{@const registrations = registeredAttributes.get(getKey(attribute))}
+						<br />(registered on: {#each registrations || [] as registration, i}{#if i > 0},
+							{/if}{@const explorerUrl = getBlockchainExplorerUrl(
+								registration.chain,
+								registration.data.txHash
+							)}{#if explorerUrl}<a
+									href={explorerUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-blue-500 hover:underline">{registration.chain}</a
+								>{:else}{registration.chain}{/if}{/each})
+					{/if}
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-700">
 					{#if getKey(attribute) === 'produced_by'}
