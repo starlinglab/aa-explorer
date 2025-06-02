@@ -72,6 +72,27 @@
 		}
 	};
 
+	// Function to check if an attribute should show Cardano registration link
+	const shouldShowCardanoRegistration = (
+		attributeKey: string,
+		data: ListOfAttestations
+	): Registration | null => {
+		const cardanoSpecificAttrs = ['sha256', 'time_created', 'media_type'];
+		if (!cardanoSpecificAttrs.includes(attributeKey)) {
+			return null;
+		}
+
+		const registrationsAttestation = data.find((att) => getKey(att) === 'registrations');
+		if (registrationsAttestation) {
+			const registrations = getAttribute(registrationsAttestation) as Registration[];
+			if (Array.isArray(registrations)) {
+				const cardanoRegistration = registrations.find((reg) => reg.chain === 'cardano');
+				return cardanoRegistration || null;
+			}
+		}
+		return null;
+	};
+
 	$: sortedData = [...data]
 		.filter((att) => getKey(att) !== 'registrations')
 		.sort((a, b) => {
@@ -110,7 +131,20 @@
 					</div>
 				</td>
 				<td class="px-4 py-2 text-xs text-gray-500 text-right">
-					{getKey(attribute)}:{#if registeredAttributes.has(getKey(attribute))}
+					{getKey(attribute)}:{#if shouldShowCardanoRegistration(getKey(attribute), data)}
+						{@const cardanoReg = shouldShowCardanoRegistration(getKey(attribute), data)}
+						{@const explorerUrl = getBlockchainExplorerUrl(
+							cardanoReg.chain,
+							cardanoReg.data.tx_hash
+						)}
+						<br />(registered on:
+						<a
+							href={explorerUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-blue-500 hover:underline">{cardanoReg.chain}</a
+						>)
+					{:else if registeredAttributes.has(getKey(attribute))}
 						{@const registrations = registeredAttributes.get(getKey(attribute))}
 						<br />(registered on: {#each registrations || [] as registration, i}{#if i > 0},
 							{/if}{@const explorerUrl = getBlockchainExplorerUrl(
