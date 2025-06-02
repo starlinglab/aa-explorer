@@ -47,7 +47,8 @@ export interface Registration {
 		assetCid: string;
 		assetTreeCid: string;
 		order_id: string;
-		txHash: string;
+		txHash?: string;  // For Numbers
+		tx_hash?: string; // For Cardano
 	};
 }
 

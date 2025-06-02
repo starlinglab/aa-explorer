@@ -39,14 +39,29 @@
 	// Function to get registration info for attributes from the registrations data
 	const getRegisteredAttributes = (data: ListOfAttestations): Map<string, Registration[]> => {
 		const registeredAttrs = new Map<string, Registration[]>();
+		const cardanoSpecificAttrs = ['sha256', 'time_created', 'media_type'];
 
 		const registrationsAttestation = data.find((att) => getKey(att) === 'registrations');
 		if (registrationsAttestation) {
 			const registrations = getAttribute(registrationsAttestation) as Registration[];
 			if (Array.isArray(registrations)) {
 				registrations.forEach((registration) => {
-					if (registration.attrs && Array.isArray(registration.attrs)) {
+					// For Numbers chain and others: use the attrs array
+					if (
+						registration.chain !== 'cardano' &&
+						registration.attrs &&
+						Array.isArray(registration.attrs)
+					) {
 						registration.attrs.forEach((attr) => {
+							if (!registeredAttrs.has(attr)) {
+								registeredAttrs.set(attr, []);
+							}
+							registeredAttrs.get(attr)!.push(registration);
+						});
+					}
+					// For Cardano chain: use hardcoded attributes
+					else if (registration.chain === 'cardano') {
+						cardanoSpecificAttrs.forEach((attr) => {
 							if (!registeredAttrs.has(attr)) {
 								registeredAttrs.set(attr, []);
 							}
@@ -70,27 +85,6 @@
 			default:
 				return '';
 		}
-	};
-
-	// Function to check if an attribute should show Cardano registration link
-	const shouldShowCardanoRegistration = (
-		attributeKey: string,
-		data: ListOfAttestations
-	): Registration | null => {
-		const cardanoSpecificAttrs = ['sha256', 'time_created', 'media_type'];
-		if (!cardanoSpecificAttrs.includes(attributeKey)) {
-			return null;
-		}
-
-		const registrationsAttestation = data.find((att) => getKey(att) === 'registrations');
-		if (registrationsAttestation) {
-			const registrations = getAttribute(registrationsAttestation) as Registration[];
-			if (Array.isArray(registrations)) {
-				const cardanoRegistration = registrations.find((reg) => reg.chain === 'cardano');
-				return cardanoRegistration || null;
-			}
-		}
-		return null;
 	};
 
 	$: sortedData = [...data]
@@ -167,10 +161,11 @@
 						{@const registrations = registeredAttributes.get(getKey(attribute))}
 						<br /><span class="text-xs text-gray-500"
 							>(registered on: {#each registrations || [] as registration, i}{#if i > 0},
-								{/if}{@const explorerUrl = getBlockchainExplorerUrl(
-									registration.chain,
-									registration.data.txHash
-								)}{#if explorerUrl}<a
+								{/if}{@const txHash =
+									registration.chain === 'cardano'
+										? (registration.data as any).tx_hash
+										: (registration.data as any).txHash}{@const explorerUrl =
+									getBlockchainExplorerUrl(registration.chain, txHash)}{#if explorerUrl}<a
 										href={explorerUrl}
 										target="_blank"
 										rel="noopener noreferrer"
