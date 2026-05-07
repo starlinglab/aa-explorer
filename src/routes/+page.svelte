@@ -187,7 +187,7 @@
 						title={cid.toString()}
 						aria-pressed={selectedCID === cid}
 					>
-						<img src={`https://files.dev.starlinglab.org/${cid}-thumb`} alt="" />
+						<img src={`https://files.dev.starlinglab.org/thumbs/${cid}`} alt="" />
 						{#if cid}
 							<div
 								class="absolute inset-0 flex items-center justify-center
@@ -213,7 +213,7 @@
 				<div class="flex">
 					<div class="w-full p-1">
 						<img
-							src={`https://files.dev.starlinglab.org/${selectedCID}-thumb`}
+							src={`https://files.dev.starlinglab.org/thumbs/${selectedCID}`}
 							alt=""
 							class="h-80 object-contain mx-auto"
 							on:error={handleImageError}
@@ -232,7 +232,7 @@
 								displayStyle="icon"
 							/> |
 							<a
-								href={`https://files.dev.starlinglab.org/${selectedCID}`}
+								href={`https://files.dev.starlinglab.org/og/${selectedCID}`}
 								download
 								class="text-blue-500 hover:underline inline-flex align-text-bottom"
 								title="Download original file"
