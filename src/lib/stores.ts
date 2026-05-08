@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { browser } from '$app/environment';
 import type { EndpointConfig } from './index';
 import type { IndividualAttestation } from './types';
 
@@ -33,7 +34,7 @@ const defaultEndpoints: EndpointConfig[] = [
 
 // Load endpoints from localStorage on init
 const initEndpoints = (): EndpointConfig[] => {
-	if (typeof localStorage !== 'undefined') {
+	if (browser) {
 		const storedEndpoints = localStorage.getItem('aa-explorer-endpoints');
 		if (storedEndpoints) {
 			try {
@@ -57,7 +58,7 @@ export const selectedCID = writable<string | null>(null);
 
 // Save endpoints to localStorage whenever they change
 endpoints.subscribe((value) => {
-	if (typeof localStorage !== 'undefined') {
+	if (browser) {
 		localStorage.setItem('aa-explorer-endpoints', JSON.stringify(value));
 	}
 });
