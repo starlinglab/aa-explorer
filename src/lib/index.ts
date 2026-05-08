@@ -9,6 +9,15 @@ export interface EndpointConfig {
   url: string;
 }
 
+export type CIDEntry = { cid: string; filesBaseUrl: string };
+
+function deriveFilesBaseUrl(endpointUrl: string): string {
+  const u = new URL(endpointUrl);
+  u.protocol = 'https:';
+  u.hostname = u.hostname.replace('.aa.', '.files.');
+  return u.origin;
+}
+
 // Export the stores for direct use
 export { endpoints, selectedCID };
 
@@ -37,17 +46,19 @@ async function fetchAndDecode(url: string): Promise<any> {
  * @param endpointConfig - Endpoint configuration with url and name.
  * @returns A Promise resolving to an array of CIDs.
  */
-async function fetchCIDsFromEndpoint(endpointConfig: EndpointConfig): Promise<string[]> {
+async function fetchCIDsFromEndpoint(endpointConfig: EndpointConfig): Promise<CIDEntry[]> {
 	const url = `${endpointConfig.url}/v1/cids`;
-	return fetchAndDecode(url);
+	const cids: string[] = await fetchAndDecode(url);
+	const filesBaseUrl = deriveFilesBaseUrl(endpointConfig.url);
+	return cids.map((cid) => ({ cid, filesBaseUrl }));
 }
 
 /**
  * Fetches all CIDs from multiple endpoints.
  *
- * @returns {Promise<string[]>} A promise that resolves to an array of CIDs.
+ * @returns {Promise<CIDEntry[]>} A promise that resolves to an array of CID entries with their files base URL.
  */
-export async function fetchAllCIDs(): Promise<string[]> {
+export async function fetchAllCIDs(): Promise<CIDEntry[]> {
 	const currentEndpoints = get(endpoints);
 	const results = await Promise.all(currentEndpoints.map((endpoint) => fetchCIDsFromEndpoint(endpoint)));
 	return results.flat();
