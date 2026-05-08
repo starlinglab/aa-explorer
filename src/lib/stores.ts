@@ -13,6 +13,10 @@ export const knownPublicKeys = writable<NamedPublicKey[]>([
 	{
 		name: 'D.Guttenfelder',
 		key: 'd8b304cdf6fca3c8c7db9932f92aac84eec095d8e166b6c13dabfe28091fec7b'
+	},
+	{
+		name: 'EE292J 2026 ingest',
+		key: '4b512f301b92c7dfe60d034c7a4a13a578aa208b37e9662b110e16dd51deff7a'
 	}
 ]);
 
