@@ -12,12 +12,13 @@
 		selectedCID as storeCID,
 		CopyButton
 	} from '$lib/index';
+	import type { CIDEntry } from '$lib/index';
 	import { DownloadIcon } from '$lib/icons';
 
 	// Track whether the image loaded successfully
 	let imageLoaded = true;
 
-	let data: { cids?: Array<string>; error?: string } = {};
+	let data: { cids?: Array<CIDEntry>; error?: string } = {};
 	let selectedCID: string | null = null;
 	let selectedAttestations: ListOfAttestations = [];
 	let selectedError: string | null = null;
@@ -164,6 +165,8 @@
 	$: authenticatedRelationships = selectedAttestations.filter((d) =>
 		KeysOfAuthenticatedRelationships.includes(d['key'])
 	);
+
+	$: selectedCIDFilesBaseUrl = data.cids?.find((d) => d.cid === selectedCID)?.filesBaseUrl ?? '';
 </script>
 
 <!-- Main container with fixed height (accounts for navbar) -->
@@ -176,7 +179,7 @@
 			<p>Loading...</p>
 		{:else}
 			<div class="flex flex-wrap gap-2">
-				{#each data.cids as cid, index (index)}
+				{#each data.cids as { cid, filesBaseUrl }, index (index)}
 					<button
 						on:click={() => loadAttestations(cid)}
 						on:keydown={(event) => event.key === 'Enter' && loadAttestations(cid)}
@@ -187,7 +190,7 @@
 						title={cid.toString()}
 						aria-pressed={selectedCID === cid}
 					>
-						<img src={`https://files.dev.starlinglab.org/${cid}-thumb`} alt="" />
+						<img src={`${filesBaseUrl}/thumbs/${cid}`} alt="" />
 						{#if cid}
 							<div
 								class="absolute inset-0 flex items-center justify-center
@@ -213,7 +216,7 @@
 				<div class="flex">
 					<div class="w-full p-1">
 						<img
-							src={`https://files.dev.starlinglab.org/${selectedCID}-thumb`}
+							src={`${selectedCIDFilesBaseUrl}/thumbs/${selectedCID}`}
 							alt=""
 							class="h-80 object-contain mx-auto"
 							on:error={handleImageError}
@@ -232,7 +235,7 @@
 								displayStyle="icon"
 							/> |
 							<a
-								href={`https://files.dev.starlinglab.org/${selectedCID}`}
+								href={`${selectedCIDFilesBaseUrl}/og/${selectedCID}`}
 								download
 								class="text-blue-500 hover:underline inline-flex align-text-bottom"
 								title="Download original file"

@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { browser } from '$app/environment';
 import type { EndpointConfig } from './index';
 import type { IndividualAttestation } from './types';
 
@@ -12,11 +13,19 @@ export const knownPublicKeys = writable<NamedPublicKey[]>([
 	{
 		name: 'D.Guttenfelder',
 		key: 'd8b304cdf6fca3c8c7db9932f92aac84eec095d8e166b6c13dabfe28091fec7b'
+	},
+	{
+		name: 'EE292J 2026 ingest',
+		key: '4b512f301b92c7dfe60d034c7a4a13a578aa208b37e9662b110e16dd51deff7a'
 	}
 ]);
 
 // Initial endpoint configs
 const defaultEndpoints: EndpointConfig[] = [
+	{
+		name: 'EE292J 2026',
+		url: 'http://ee292j-2026.aa.dev.starlinglab.org'
+	},
 	{
 		name: 'D. Guttenfelder',
 		url: 'https://stanford.aa.dev.starlinglab.org'
@@ -33,7 +42,7 @@ const defaultEndpoints: EndpointConfig[] = [
 
 // Load endpoints from localStorage on init
 const initEndpoints = (): EndpointConfig[] => {
-	if (typeof localStorage !== 'undefined') {
+	if (browser) {
 		const storedEndpoints = localStorage.getItem('aa-explorer-endpoints');
 		if (storedEndpoints) {
 			try {
@@ -57,7 +66,7 @@ export const selectedCID = writable<string | null>(null);
 
 // Save endpoints to localStorage whenever they change
 endpoints.subscribe((value) => {
-	if (typeof localStorage !== 'undefined') {
+	if (browser) {
 		localStorage.setItem('aa-explorer-endpoints', JSON.stringify(value));
 	}
 });
