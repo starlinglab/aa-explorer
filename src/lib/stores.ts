@@ -19,6 +19,10 @@ export const knownPublicKeys = writable<NamedPublicKey[]>([
 // Initial endpoint configs
 const defaultEndpoints: EndpointConfig[] = [
 	{
+		name: 'EE292J 2026',
+		url: 'http://ee292j-2026.aa.dev.starlinglab.org'
+	},
+	{
 		name: 'D. Guttenfelder',
 		url: 'https://stanford.aa.dev.starlinglab.org'
 	},
