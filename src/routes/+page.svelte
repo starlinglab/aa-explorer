@@ -7,6 +7,7 @@
 	import {
 		fetchAllCIDs,
 		fetchAllAttestations,
+		fetchProjectId,
 		shortenCID,
 		endpoints,
 		selectedCID as storeCID,
@@ -90,6 +91,7 @@
 		try {
 			const cids = await fetchAllCIDs();
 			data.cids = cids;
+			loadProjectIds(cids);
 		} catch (err: any) {
 			data.error = err.message;
 		}
@@ -167,10 +169,82 @@
 	);
 
 	$: selectedCIDFilesBaseUrl = data.cids?.find((d) => d.cid === selectedCID)?.filesBaseUrl ?? '';
+
+	// project_id filter — populated by background fetches after CIDs load
+	let cidToProjectId: Map<string, string> = new Map();
+	let projectsLoading = false;
+	let selectedProjects: Set<string> = new Set();
+
+	async function loadProjectIds(cids: CIDEntry[]) {
+		const primaryEndpoint = currentEndpoints[0];
+		if (!primaryEndpoint) return;
+		projectsLoading = true;
+		const entries = await Promise.all(
+			cids.map(async ({ cid }) => {
+				const projectId = await fetchProjectId(primaryEndpoint, cid);
+				return [cid, projectId] as [string, string | null];
+			})
+		);
+		const map = new Map<string, string>();
+		for (const [cid, projectId] of entries) {
+			if (projectId) map.set(cid, projectId);
+		}
+		cidToProjectId = map;
+		// "main" (no project_id) starts unchecked
+		selectedProjects = new Set(map.values());
+		projectsLoading = false;
+	}
+
+	$: projectCounts = (data.cids ?? []).reduce(
+		(acc, { cid }) => {
+			const id = cidToProjectId.get(cid) ?? 'main';
+			acc[id] = (acc[id] ?? 0) + 1;
+			return acc;
+		},
+		{} as Record<string, number>
+	);
+
+	function toggleProject(name: string) {
+		if (selectedProjects.has(name)) {
+			selectedProjects.delete(name);
+		} else {
+			selectedProjects.add(name);
+		}
+		selectedProjects = selectedProjects;
+	}
+
+	$: filteredCIDs = (data.cids ?? []).filter(({ cid }) => {
+		const projectId = cidToProjectId.get(cid) ?? 'main';
+		return selectedProjects.has(projectId);
+	});
 </script>
 
 <!-- Main container with fixed height (accounts for navbar) -->
 <div class="flex overflow-hidden" style="height: calc(100vh - 80px)">
+
+	<!-- Filter sidebar -->
+	<div class="flex-shrink-0 w-48 border-r border-gray-200 bg-white overflow-auto flex flex-col">
+		<p class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">Project</p>
+		{#if projectsLoading}
+			<span class="px-3 py-2 text-xs text-gray-400">Loading…</span>
+		{:else}
+			{#each Object.entries(projectCounts) as [name, count]}
+				<label class="flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 select-none">
+					<input
+						type="checkbox"
+						checked={selectedProjects.has(name)}
+						on:change={() => toggleProject(name)}
+						class="accent-blue-500"
+					/>
+					<span class="flex-1 truncate">{name}</span>
+					<span class="text-xs text-gray-400">{count}</span>
+				</label>
+			{/each}
+		{/if}
+	</div>
+
+	<!-- Panels -->
+	<div class="flex flex-1 overflow-hidden">
 	<!-- Left panel - Assets grid (independently scrollable) -->
 	<div class="w-1/2 overflow-auto p-4 {selectedCID ? 'lg:w-2/3' : 'flex-grow'}">
 		{#if data.error}
@@ -179,7 +253,7 @@
 			<p>Loading...</p>
 		{:else}
 			<div class="flex flex-wrap gap-2">
-				{#each data.cids as { cid, filesBaseUrl }, index (index)}
+				{#each filteredCIDs as { cid, filesBaseUrl }, index (index)}
 					<button
 						on:click={() => loadAttestations(cid)}
 						on:keydown={(event) => event.key === 'Enter' && loadAttestations(cid)}
@@ -291,4 +365,5 @@
 			{/if}
 		</div>
 	</div>
+</div>
 </div>

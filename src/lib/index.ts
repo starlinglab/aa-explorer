@@ -9,7 +9,7 @@ export interface EndpointConfig {
   url: string;
 }
 
-export type CIDEntry = { cid: string; filesBaseUrl: string };
+export type CIDEntry = { cid: string; filesBaseUrl: string; endpointName: string };
 
 function deriveFilesBaseUrl(endpointUrl: string): string {
   const u = new URL(endpointUrl);
@@ -50,7 +50,7 @@ async function fetchCIDsFromEndpoint(endpointConfig: EndpointConfig): Promise<CI
 	const url = `${endpointConfig.url}/v1/cids`;
 	const cids: string[] = await fetchAndDecode(url);
 	const filesBaseUrl = deriveFilesBaseUrl(endpointConfig.url);
-	return cids.map((cid) => ({ cid, filesBaseUrl }));
+	return cids.map((cid) => ({ cid, filesBaseUrl, endpointName: endpointConfig.name }));
 }
 
 /**
@@ -97,6 +97,21 @@ export async function fetchAllAttestations(cid: string): Promise<{}[]> {
 		})
 	);
 	return results.flat();
+}
+
+/**
+ * Fetches the project_id attestation value for a single CID from one endpoint.
+ * Returns null if not present or on error.
+ */
+export async function fetchProjectId(endpointConfig: EndpointConfig, cid: string): Promise<string | null> {
+	try {
+		const attestations = await fetchAttestationsFromEndpoint(endpointConfig, cid);
+		const entry = (attestations as Record<string, any>)['project_id'];
+		const value = entry?.attestation?.value;
+		return typeof value === 'string' ? value : null;
+	} catch {
+		return null;
+	}
 }
 
 export const shortenCID = (s: string) => `${s.slice(0, 4)}…${s.slice(-4)}`;
