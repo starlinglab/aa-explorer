@@ -173,9 +173,11 @@
 	// filters — populated by background fetches after CIDs load
 	let cidToProjectId: Map<string, string> = new Map();
 	let cidToRelationshipCount: Map<string, number> = new Map();
+	let cidImages: Set<string> = new Set();
 	let metadataLoading = false;
 	let selectedProjects: Set<string> = new Set();
 	let filterRelationships = false;
+	let filterImages = false;
 
 	async function loadCIDMetadata(cids: CIDEntry[]) {
 		const primaryEndpoint = currentEndpoints[0];
@@ -189,12 +191,15 @@
 		);
 		const projectMap = new Map<string, string>();
 		const relMap = new Map<string, number>();
-		for (const { cid, projectId, relationshipCount } of results) {
+		const imgSet = new Set<string>();
+		for (const { cid, projectId, relationshipCount, isImage } of results) {
 			if (projectId) projectMap.set(cid, projectId);
 			if (relationshipCount > 0) relMap.set(cid, relationshipCount);
+			if (isImage) imgSet.add(cid);
 		}
 		cidToProjectId = projectMap;
 		cidToRelationshipCount = relMap;
+		cidImages = imgSet;
 		// "main" (no project_id) starts unchecked
 		selectedProjects = new Set(projectMap.values());
 		metadataLoading = false;
@@ -222,6 +227,7 @@
 		const projectId = cidToProjectId.get(cid) ?? 'main';
 		if (!selectedProjects.has(projectId)) return false;
 		if (filterRelationships && !cidToRelationshipCount.has(cid)) return false;
+		if (filterImages && !cidImages.has(cid)) return false;
 		return true;
 	});
 </script>
@@ -250,15 +256,30 @@
 		{/if}
 
 		<p class="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">Relationships</p>
-		<label class="flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 select-none">
-			<input
-				type="checkbox"
-				bind:checked={filterRelationships}
-				class="accent-blue-500"
-			/>
-			<span class="flex-1">Has relationships</span>
-			<span class="text-xs text-gray-400">{cidToRelationshipCount.size}</span>
-		</label>
+		<div class="px-3 py-1.5">
+			<button
+				on:click={() => (filterRelationships = !filterRelationships)}
+				class="w-full text-left text-sm px-2 py-1 rounded transition-colors {filterRelationships
+					? 'bg-blue-500 text-white'
+					: 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+			>
+				🔗 Related only
+				<span class="float-right text-xs {filterRelationships ? 'text-blue-100' : 'text-gray-400'}">{cidToRelationshipCount.size}</span>
+			</button>
+		</div>
+
+		<p class="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">Media type</p>
+		<div class="px-3 py-1.5">
+			<button
+				on:click={() => (filterImages = !filterImages)}
+				class="w-full text-left text-sm px-2 py-1 rounded transition-colors {filterImages
+					? 'bg-blue-500 text-white'
+					: 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+			>
+				🖼️ Images only
+				<span class="float-right text-xs {filterImages ? 'text-blue-100' : 'text-gray-400'}">{cidImages.size}</span>
+			</button>
+		</div>
 	</div>
 
 	<!-- Panels -->

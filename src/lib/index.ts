@@ -101,7 +101,7 @@ export async function fetchAllAttestations(cid: string): Promise<{}[]> {
 
 const RelationshipKeys = ['asset_subcollection', 'asset_collection', 'children', 'parents'];
 
-export type CIDMetadata = { projectId: string | null; relationshipCount: number };
+export type CIDMetadata = { projectId: string | null; relationshipCount: number; isImage: boolean };
 
 /**
  * Fetches project_id and total relationship count for a single CID from one endpoint.
@@ -131,9 +131,10 @@ export async function fetchCIDMetadata(
 				relationshipCount += 1;
 			}
 		}
-		return { projectId, relationshipCount };
+		const isImage = attestations['media_type']?.attestation?.value === 'image/jpeg';
+		return { projectId, relationshipCount, isImage };
 	} catch {
-		return { projectId: null, relationshipCount: 0 };
+		return { projectId: null, relationshipCount: 0, isImage: false };
 	}
 }
 
