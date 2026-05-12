@@ -99,18 +99,26 @@ export async function fetchAllAttestations(cid: string): Promise<{}[]> {
 	return results.flat();
 }
 
+const RelationshipKeys = ['asset_subcollection', 'asset_collection', 'children', 'parents'];
+
+export type CIDMetadata = { projectId: string | null; hasRelationships: boolean };
+
 /**
- * Fetches the project_id attestation value for a single CID from one endpoint.
- * Returns null if not present or on error.
+ * Fetches project_id and relationship presence for a single CID from one endpoint.
+ * Uses a single network request for both pieces of information.
  */
-export async function fetchProjectId(endpointConfig: EndpointConfig, cid: string): Promise<string | null> {
+export async function fetchCIDMetadata(
+	endpointConfig: EndpointConfig,
+	cid: string
+): Promise<CIDMetadata> {
 	try {
-		const attestations = await fetchAttestationsFromEndpoint(endpointConfig, cid);
-		const entry = (attestations as Record<string, any>)['project_id'];
-		const value = entry?.attestation?.value;
-		return typeof value === 'string' ? value : null;
+		const attestations = (await fetchAttestationsFromEndpoint(endpointConfig, cid)) as Record<string, any>;
+		const entry = attestations['project_id'];
+		const projectId = typeof entry?.attestation?.value === 'string' ? entry.attestation.value : null;
+		const hasRelationships = RelationshipKeys.some((key) => key in attestations);
+		return { projectId, hasRelationships };
 	} catch {
-		return null;
+		return { projectId: null, hasRelationships: false };
 	}
 }
 

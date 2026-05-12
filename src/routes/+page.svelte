@@ -7,7 +7,7 @@
 	import {
 		fetchAllCIDs,
 		fetchAllAttestations,
-		fetchProjectId,
+		fetchCIDMetadata,
 		shortenCID,
 		endpoints,
 		selectedCID as storeCID,
@@ -91,7 +91,7 @@
 		try {
 			const cids = await fetchAllCIDs();
 			data.cids = cids;
-			loadProjectIds(cids);
+			loadCIDMetadata(cids);
 		} catch (err: any) {
 			data.error = err.message;
 		}
@@ -170,29 +170,34 @@
 
 	$: selectedCIDFilesBaseUrl = data.cids?.find((d) => d.cid === selectedCID)?.filesBaseUrl ?? '';
 
-	// project_id filter — populated by background fetches after CIDs load
+	// filters — populated by background fetches after CIDs load
 	let cidToProjectId: Map<string, string> = new Map();
-	let projectsLoading = false;
+	let cidsWithRelationships: Set<string> = new Set();
+	let metadataLoading = false;
 	let selectedProjects: Set<string> = new Set();
+	let filterRelationships = false;
 
-	async function loadProjectIds(cids: CIDEntry[]) {
+	async function loadCIDMetadata(cids: CIDEntry[]) {
 		const primaryEndpoint = currentEndpoints[0];
 		if (!primaryEndpoint) return;
-		projectsLoading = true;
-		const entries = await Promise.all(
+		metadataLoading = true;
+		const results = await Promise.all(
 			cids.map(async ({ cid }) => {
-				const projectId = await fetchProjectId(primaryEndpoint, cid);
-				return [cid, projectId] as [string, string | null];
+				const meta = await fetchCIDMetadata(primaryEndpoint, cid);
+				return { cid, ...meta };
 			})
 		);
-		const map = new Map<string, string>();
-		for (const [cid, projectId] of entries) {
-			if (projectId) map.set(cid, projectId);
+		const projectMap = new Map<string, string>();
+		const relSet = new Set<string>();
+		for (const { cid, projectId, hasRelationships } of results) {
+			if (projectId) projectMap.set(cid, projectId);
+			if (hasRelationships) relSet.add(cid);
 		}
-		cidToProjectId = map;
+		cidToProjectId = projectMap;
+		cidsWithRelationships = relSet;
 		// "main" (no project_id) starts unchecked
-		selectedProjects = new Set(map.values());
-		projectsLoading = false;
+		selectedProjects = new Set(projectMap.values());
+		metadataLoading = false;
 	}
 
 	$: projectCounts = (data.cids ?? []).reduce(
@@ -215,7 +220,9 @@
 
 	$: filteredCIDs = (data.cids ?? []).filter(({ cid }) => {
 		const projectId = cidToProjectId.get(cid) ?? 'main';
-		return selectedProjects.has(projectId);
+		if (!selectedProjects.has(projectId)) return false;
+		if (filterRelationships && !cidsWithRelationships.has(cid)) return false;
+		return true;
 	});
 </script>
 
@@ -225,7 +232,7 @@
 	<!-- Filter sidebar -->
 	<div class="flex-shrink-0 w-48 border-r border-gray-200 bg-white overflow-auto flex flex-col">
 		<p class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">Project</p>
-		{#if projectsLoading}
+		{#if metadataLoading}
 			<span class="px-3 py-2 text-xs text-gray-400">Loading…</span>
 		{:else}
 			{#each Object.entries(projectCounts) as [name, count]}
@@ -241,6 +248,17 @@
 				</label>
 			{/each}
 		{/if}
+
+		<p class="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">Relationships</p>
+		<label class="flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 select-none">
+			<input
+				type="checkbox"
+				bind:checked={filterRelationships}
+				class="accent-blue-500"
+			/>
+			<span class="flex-1">Has relationships</span>
+			<span class="text-xs text-gray-400">{cidsWithRelationships.size}</span>
+		</label>
 	</div>
 
 	<!-- Panels -->
