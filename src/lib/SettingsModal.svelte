@@ -6,12 +6,13 @@
 	export let showModal = false;
 
 	let endpointsList: (EndpointConfig & { id: string })[] = [];
-	
+
 	// Subscribe to the endpoints store and update our local list whenever it changes
 	const unsubscribe = endpoints.subscribe(currentEndpoints => {
 		endpointsList = currentEndpoints.map((endpoint, index) => ({
 			name: endpoint.name,
 			url: endpoint.url,
+			jwt: endpoint.jwt,
 			id: `endpoint-${index}`
 		}));
 	});
@@ -28,7 +29,8 @@
 		// Update the endpoints store with the new configuration
 		const updatedEndpoints = endpointsList.map(item => ({
 			name: item.name,
-			url: item.url
+			url: item.url,
+			...(item.jwt ? { jwt: item.jwt } : {})
 		}));
 		
 		endpoints.set(updatedEndpoints);
@@ -55,7 +57,7 @@
 	}
 
 	// Handle endpoint field changes
-	function handleEndpointChange(index: number, field: 'name' | 'url', newValue: string) {
+	function handleEndpointChange(index: number, field: 'name' | 'url' | 'jwt', newValue: string) {
 		const updatedList = [...endpointsList];
 		updatedList[index][field] = newValue;
 		endpointsList = updatedList;
@@ -100,7 +102,7 @@
 					on:drop={() => handleDrop(index)}
 				>
 					<div class="cursor-move p-1">☰</div>
-					<div class="flex-grow grid grid-cols-2 gap-2">
+					<div class="flex-grow grid grid-cols-3 gap-2">
 						<input
 							type="text"
 							class="p-2 border border-gray-300 rounded"
@@ -114,6 +116,13 @@
 							placeholder="URL"
 							value={endpoint.url}
 							on:input={(e) => handleEndpointChange(index, 'url', e.currentTarget.value)}
+						/>
+						<input
+							type="password"
+							class="p-2 border border-gray-300 rounded"
+							placeholder="JWT token (enables editing)"
+							value={endpoint.jwt ?? ''}
+							on:input={(e) => handleEndpointChange(index, 'jwt', e.currentTarget.value)}
 						/>
 					</div>
 					{#if endpointsList.length > 1}
