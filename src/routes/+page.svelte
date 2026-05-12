@@ -172,7 +172,7 @@
 
 	// filters — populated by background fetches after CIDs load
 	let cidToProjectId: Map<string, string> = new Map();
-	let cidsWithRelationships: Set<string> = new Set();
+	let cidToRelationshipCount: Map<string, number> = new Map();
 	let metadataLoading = false;
 	let selectedProjects: Set<string> = new Set();
 	let filterRelationships = false;
@@ -188,13 +188,13 @@
 			})
 		);
 		const projectMap = new Map<string, string>();
-		const relSet = new Set<string>();
-		for (const { cid, projectId, hasRelationships } of results) {
+		const relMap = new Map<string, number>();
+		for (const { cid, projectId, relationshipCount } of results) {
 			if (projectId) projectMap.set(cid, projectId);
-			if (hasRelationships) relSet.add(cid);
+			if (relationshipCount > 0) relMap.set(cid, relationshipCount);
 		}
 		cidToProjectId = projectMap;
-		cidsWithRelationships = relSet;
+		cidToRelationshipCount = relMap;
 		// "main" (no project_id) starts unchecked
 		selectedProjects = new Set(projectMap.values());
 		metadataLoading = false;
@@ -221,7 +221,7 @@
 	$: filteredCIDs = (data.cids ?? []).filter(({ cid }) => {
 		const projectId = cidToProjectId.get(cid) ?? 'main';
 		if (!selectedProjects.has(projectId)) return false;
-		if (filterRelationships && !cidsWithRelationships.has(cid)) return false;
+		if (filterRelationships && !cidToRelationshipCount.has(cid)) return false;
 		return true;
 	});
 </script>
@@ -257,7 +257,7 @@
 				class="accent-blue-500"
 			/>
 			<span class="flex-1">Has relationships</span>
-			<span class="text-xs text-gray-400">{cidsWithRelationships.size}</span>
+			<span class="text-xs text-gray-400">{cidToRelationshipCount.size}</span>
 		</label>
 	</div>
 
@@ -289,6 +289,11 @@
 								text-xs text-gray-700 opacity-0 hover:opacity-100"
 							>
 								{shortenCID(cid)}
+							</div>
+						{/if}
+						{#if cidToRelationshipCount.has(cid)}
+							<div class="absolute bottom-0.5 right-0.5 text-xs leading-none bg-black/60 text-white rounded px-1 py-0.5 pointer-events-none">
+								🔗 {cidToRelationshipCount.get(cid)}
 							</div>
 						{/if}
 					</button>

@@ -101,11 +101,12 @@ export async function fetchAllAttestations(cid: string): Promise<{}[]> {
 
 const RelationshipKeys = ['asset_subcollection', 'asset_collection', 'children', 'parents'];
 
-export type CIDMetadata = { projectId: string | null; hasRelationships: boolean };
+export type CIDMetadata = { projectId: string | null; relationshipCount: number };
 
 /**
- * Fetches project_id and relationship presence for a single CID from one endpoint.
+ * Fetches project_id and total relationship count for a single CID from one endpoint.
  * Uses a single network request for both pieces of information.
+ * Relationship count sums the lengths of all relationship arrays (children, parents, etc.).
  */
 export async function fetchCIDMetadata(
 	endpointConfig: EndpointConfig,
@@ -115,10 +116,24 @@ export async function fetchCIDMetadata(
 		const attestations = (await fetchAttestationsFromEndpoint(endpointConfig, cid)) as Record<string, any>;
 		const entry = attestations['project_id'];
 		const projectId = typeof entry?.attestation?.value === 'string' ? entry.attestation.value : null;
-		const hasRelationships = RelationshipKeys.some((key) => key in attestations);
-		return { projectId, hasRelationships };
+		let relationshipCount = 0;
+		for (const key of RelationshipKeys) {
+			const value = attestations[key]?.attestation?.value;
+			if (value == null) continue;
+			if (Array.isArray(value)) {
+				relationshipCount += value.length;
+			} else if (typeof value === 'object') {
+				// e.g. children: { part_of: [CID, CID, CID] }
+				for (const sub of Object.values(value as Record<string, unknown>)) {
+					relationshipCount += Array.isArray(sub) ? sub.length : 1;
+				}
+			} else {
+				relationshipCount += 1;
+			}
+		}
+		return { projectId, relationshipCount };
 	} catch {
-		return { projectId: null, hasRelationships: false };
+		return { projectId: null, relationshipCount: 0 };
 	}
 }
 
