@@ -110,6 +110,24 @@
 			// Also update the store
 			storeCID.set(null);
 		}
+
+		filterRelationships = urlParams.get('filterRelationships') === '1';
+		filterImages = urlParams.get('filterImages') === '1';
+	}
+
+	function updateFilterURL() {
+		const url = new URL(window.location.href);
+		if (filterRelationships) {
+			url.searchParams.set('filterRelationships', '1');
+		} else {
+			url.searchParams.delete('filterRelationships');
+		}
+		if (filterImages) {
+			url.searchParams.set('filterImages', '1');
+		} else {
+			url.searchParams.delete('filterImages');
+		}
+		window.history.replaceState({}, '', url);
 	}
 
 	// When an item is clicked, fetch its attestations.
@@ -258,7 +276,7 @@
 		<p class="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">Relationships</p>
 		<div class="px-3 py-1.5">
 			<button
-				on:click={() => (filterRelationships = !filterRelationships)}
+				on:click={() => { filterRelationships = !filterRelationships; updateFilterURL(); }}
 				class="w-full text-left text-sm px-2 py-1 rounded transition-colors {filterRelationships
 					? 'bg-blue-500 text-white'
 					: 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
@@ -271,7 +289,7 @@
 		<p class="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">Media type</p>
 		<div class="px-3 py-1.5">
 			<button
-				on:click={() => (filterImages = !filterImages)}
+				on:click={() => { filterImages = !filterImages; updateFilterURL(); }}
 				class="w-full text-left text-sm px-2 py-1 rounded transition-colors {filterImages
 					? 'bg-blue-500 text-white'
 					: 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
