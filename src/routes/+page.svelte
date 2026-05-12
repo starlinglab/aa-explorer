@@ -8,12 +8,14 @@
 		fetchAllCIDs,
 		fetchAllAttestations,
 		fetchCIDMetadata,
+		setAttestation,
+		addRelationship,
 		shortenCID,
 		endpoints,
 		selectedCID as storeCID,
 		CopyButton
 	} from '$lib/index';
-	import type { CIDEntry } from '$lib/index';
+	import type { CIDEntry, CIDMetadata } from '$lib/index';
 	import { DownloadIcon } from '$lib/icons';
 
 	// Track whether the image loaded successfully
@@ -187,6 +189,85 @@
 	);
 
 	$: selectedCIDFilesBaseUrl = data.cids?.find((d) => d.cid === selectedCID)?.filesBaseUrl ?? '';
+
+	// Refresh detail panel + sidebar metadata for one CID after an edit, without navigation side effects
+	async function refreshAttestations(cid: string) {
+		isLoading = true;
+		selectedError = null;
+		try {
+			const [attestations, meta] = await Promise.all([
+				fetchAllAttestations(cid),
+				currentEndpoints[0] ? fetchCIDMetadata(currentEndpoints[0], cid) : Promise.resolve(null as CIDMetadata | null)
+			]);
+			selectedAttestations = attestations as ListOfAttestations;
+			if (meta) updateCIDMetadata(cid, meta);
+		} catch (err: any) {
+			selectedError = err.message;
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	function updateCIDMetadata(cid: string, meta: CIDMetadata) {
+		if (meta.projectId) {
+			cidToProjectId = new Map(cidToProjectId).set(cid, meta.projectId);
+		} else {
+			const m = new Map(cidToProjectId);
+			m.delete(cid);
+			cidToProjectId = m;
+		}
+		if (meta.relationshipCount > 0) {
+			cidToRelationshipCount = new Map(cidToRelationshipCount).set(cid, meta.relationshipCount);
+		} else {
+			const m = new Map(cidToRelationshipCount);
+			m.delete(cid);
+			cidToRelationshipCount = m;
+		}
+		if (meta.isImage) {
+			cidImages = new Set([...cidImages, cid]);
+		} else {
+			const s = new Set(cidImages);
+			s.delete(cid);
+			cidImages = s;
+		}
+	}
+
+	// edit state — "add attribute" and "add relationship" forms
+	let newAttrKey = '';
+	let newAttrValue = '';
+	let newAttrError: string | null = null;
+
+	let newRelType: 'children' | 'parents' = 'children';
+	let newRelRelationType = 'part_of';
+	let newRelCid = '';
+	let newRelError: string | null = null;
+
+	async function addAttribute() {
+		if (!newAttrKey || !selectedCID) return;
+		newAttrError = null;
+		try {
+			let parsed: unknown;
+			try { parsed = JSON.parse(newAttrValue); } catch { parsed = newAttrValue; }
+			await setAttestation(currentEndpoints[0], selectedCID, newAttrKey, parsed);
+			newAttrKey = '';
+			newAttrValue = '';
+			refreshAttestations(selectedCID);
+		} catch (e: any) {
+			newAttrError = e.message;
+		}
+	}
+
+	async function addRel() {
+		if (!newRelCid || !selectedCID) return;
+		newRelError = null;
+		try {
+			await addRelationship(currentEndpoints[0], selectedCID, newRelType, newRelRelationType, newRelCid);
+			newRelCid = '';
+			refreshAttestations(selectedCID);
+		} catch (e: any) {
+			newRelError = e.message;
+		}
+	}
 
 	// filters — populated by background fetches after CIDs load
 	let cidToProjectId: Map<string, string> = new Map();
@@ -409,11 +490,34 @@
 							{/each}
 						</div>
 						<p class="text-xs text-gray-500">Legend: (H)ash, (S)ignature, (T)imestamp</p>
-						<TableOfMetadata data={authenticatedMetadata} {selectedCID}></TableOfMetadata>
+						<TableOfMetadata
+							data={authenticatedMetadata}
+							{selectedCID}
+							editEndpoint={currentEndpoints[0]}
+							onSaved={() => refreshAttestations(selectedCID!)}
+						/>
+
+						{#if currentEndpoints[0]?.jwt && selectedCID}
+							<div class="mt-2 flex gap-1 items-center flex-wrap">
+								<input bind:value={newAttrKey} placeholder="key" class="border rounded px-2 py-1 text-xs w-24" />
+								<input bind:value={newAttrValue} placeholder="value" class="border rounded px-2 py-1 text-xs flex-1 min-w-0" />
+								<button
+									on:click={addAttribute}
+									disabled={!newAttrKey}
+									class="text-xs bg-blue-500 text-white px-2 py-1 rounded disabled:opacity-40"
+								>+ Add attribute</button>
+							</div>
+							{#if newAttrError}<p class="text-red-500 text-xs mt-1">{newAttrError}</p>{/if}
+						{/if}
 
 						<h4 class="text-base font-semibold mt-4">Authenticated Relationships</h4>
 						{#if authenticatedRelationships.length > 0}
-							<TableOfMetadata data={authenticatedRelationships} {selectedCID}></TableOfMetadata>
+							<TableOfMetadata
+								data={authenticatedRelationships}
+								{selectedCID}
+								editEndpoint={currentEndpoints[0]}
+								onSaved={() => refreshAttestations(selectedCID!)}
+							/>
 
 							<h4 class="text-base font-semibold mt-4">Relationship Network</h4>
 							<div class="w-full">
@@ -421,6 +525,23 @@
 							</div>
 						{:else}
 							<p class="text-sm text-gray-500 mb-4">No relationships found for this asset.</p>
+						{/if}
+
+						{#if currentEndpoints[0]?.jwt && selectedCID}
+							<div class="mt-2 flex gap-1 items-center flex-wrap">
+								<select bind:value={newRelType} class="border rounded px-1 py-1 text-xs">
+									<option value="children">children</option>
+									<option value="parents">parents</option>
+								</select>
+								<input bind:value={newRelRelationType} placeholder="relation type (e.g. part_of)" class="border rounded px-2 py-1 text-xs w-36" />
+								<input bind:value={newRelCid} placeholder="target CID" class="border rounded px-2 py-1 text-xs flex-1 min-w-0" />
+								<button
+									on:click={addRel}
+									disabled={!newRelCid}
+									class="text-xs bg-blue-500 text-white px-2 py-1 rounded disabled:opacity-40"
+								>+ Link</button>
+							</div>
+							{#if newRelError}<p class="text-red-500 text-xs mt-1">{newRelError}</p>{/if}
 						{/if}
 					</div>
 				{/if}
