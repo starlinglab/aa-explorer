@@ -15,7 +15,7 @@ export const knownPublicKeys = writable<NamedPublicKey[]>([
 		key: 'd8b304cdf6fca3c8c7db9932f92aac84eec095d8e166b6c13dabfe28091fec7b'
 	},
 	{
-		name: 'EE292J 2026 ingest',
+		name: 'Starling Ingest Server',
 		key: '4b512f301b92c7dfe60d034c7a4a13a578aa208b37e9662b110e16dd51deff7a'
 	}
 ]);
@@ -25,6 +25,14 @@ const defaultEndpoints: EndpointConfig[] = [
 	{
 		name: 'EE292J 2026',
 		url: 'http://ee292j-2026.aa.dev.starlinglab.org'
+	},
+	{
+		name: 'Group 1',
+		url: 'http://ee292j-2026.aa1.dev.starlinglab.org'
+	},
+	{
+		name: 'Group 2',
+		url: 'http://ee292j-2026.aa2.dev.starlinglab.org'
 	},
 	{
 		name: 'D. Guttenfelder',
