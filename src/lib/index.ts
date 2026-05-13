@@ -1,4 +1,4 @@
-import { decode as dagCBORDecode } from '@ipld/dag-cbor';
+import { decode as dagCBORDecode, encode as dagCBOREncode } from '@ipld/dag-cbor';
 import { CID } from 'multiformats/cid';
 import { get } from 'svelte/store';
 import { endpoints, selectedCID } from './stores';
@@ -7,6 +7,7 @@ import { endpoints, selectedCID } from './stores';
 export interface EndpointConfig {
   name: string;
   url: string;
+  jwt?: string;
 }
 
 export type CIDEntry = { cid: string; filesBaseUrl: string; endpointName: string };
@@ -136,6 +137,44 @@ export async function fetchCIDMetadata(
 	} catch {
 		return { projectId: null, relationshipCount: 0, isImage: false };
 	}
+}
+
+async function postCBOR(url: string, jwt: string, body: unknown): Promise<void> {
+	const encoded = dagCBOREncode(body);
+	const res = await fetch(url, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/cbor',
+			Authorization: `Bearer ${jwt}`
+		},
+		body: encoded
+	});
+	if (!res.ok) throw new Error(`Write failed: ${res.status} ${res.statusText}`);
+}
+
+export async function setAttestation(
+	endpoint: EndpointConfig,
+	cid: string,
+	key: string,
+	value: unknown
+): Promise<void> {
+	if (!endpoint.jwt) throw new Error('No JWT configured for this endpoint');
+	await postCBOR(`${endpoint.url}/v1/c/${cid}`, endpoint.jwt, [{ key, value }]);
+}
+
+export async function addRelationship(
+	endpoint: EndpointConfig,
+	cid: string,
+	type: 'children' | 'parents',
+	relationType: string,
+	targetCid: string
+): Promise<void> {
+	if (!endpoint.jwt) throw new Error('No JWT configured for this endpoint');
+	await postCBOR(`${endpoint.url}/v1/rel/${cid}`, endpoint.jwt, {
+		type,
+		relation_type: relationType,
+		cid: CID.parse(targetCid)
+	});
 }
 
 export const shortenCID = (s: string) => `${s.slice(0, 4)}…${s.slice(-4)}`;
